@@ -53,6 +53,14 @@ button.secondary { background: #2f3336; }
 <strong>Block 1 excluded.</strong> 198 cards. Click any thumbnail to expand the card image.<br>
 Use − to collapse text, × to hide a card. Show All restores everything.
 </div>
+
+<div style="margin: 8px 0 12px 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+  <input id="search" type="text" placeholder="Search ID, name, or text..." 
+         oninput="applySearch()"
+         style="flex: 1; min-width: 220px; padding: 8px 12px; border-radius: 20px; border: 1px solid #2f3336; background: #16181c; color: #e7e9ea; font-size: 0.95em;">
+  <button class="secondary" onclick="clearSearch()">Clear</button>
+</div>
+
 <div class="filter">
 <button class="active" onclick="filterCards('ALL')">All (198)</button>
 <button onclick="filterCards('REST')">REST</button>
@@ -3931,6 +3939,27 @@ function copyVisibleToSim() {
     document.body.removeChild(ta);
     alert('Copied ' + lines.length + ' cards to clipboard.');
   });
+}
+
+function applySearch() {
+  const q = (document.getElementById('search').value || '').trim().toLowerCase();
+  document.querySelectorAll('.card').forEach(c => {
+    if (c.classList.contains('hidden')) return;
+    const id = (c.querySelector('.card-id')?.textContent || '').toLowerCase();
+    const name = (c.querySelector('.card-name')?.textContent || '').toLowerCase();
+    const text = (c.querySelector('.card-text')?.textContent || '').toLowerCase();
+    const match = !q || id.includes(q) || name.includes(q) || text.includes(q);
+    c.style.display = match ? 'flex' : 'none';
+  });
+}
+function clearSearch() {
+  const input = document.getElementById('search');
+  input.value = '';
+  applySearch();
+  // also restore any category filter to All
+  document.querySelectorAll('.filter button').forEach(b => b.classList.remove('active'));
+  const allBtn = document.querySelector('.filter button');
+  if (allBtn) allBtn.classList.add('active');
 }
 </script>
 </body>
