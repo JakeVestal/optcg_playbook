@@ -1,1 +1,2 @@
 optcg-001-site-link.patch
+optcg-002-image-proxy (1).patch
