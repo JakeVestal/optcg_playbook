@@ -62,17 +62,16 @@ Use − to collapse text, × to hide a card. Show All restores everything.
 </div>
 
 <div class="filter">
-<button class="active" onclick="filterCards('ALL')">All (198)</button>
-<button onclick="filterCards('REST')">REST</button>
-<button onclick="filterCards('FREEZE')">FREEZE</button>
-<button onclick="filterCards('DON')">DON</button>
-<button onclick="filterCards('RESTAND_DON')">RESTAND_DON</button>
-<button onclick="filterCards('DRAW')">DRAW</button>
-<button onclick="filterCards('BLOCKER')">BLOCKER</button>
-<button onclick="filterCards('RUSH')">RUSH</button>
-<button onclick="filterCards('UNBLOCKABLE')">UNBLOCKABLE</button>
-<button onclick="filterCards('DOUBLE_ATTACK')">DOUBLE_ATTACK</button>
-<button class="secondary" onclick="showAll()">Show All</button>
+<button onclick="toggleFilter(this, 'REST')">REST</button>
+<button onclick="toggleFilter(this, 'FREEZE')">FREEZE</button>
+<button onclick="toggleFilter(this, 'DON')">DON</button>
+<button onclick="toggleFilter(this, 'RESTAND_DON')">RESTAND_DON</button>
+<button onclick="toggleFilter(this, 'DRAW')">DRAW</button>
+<button onclick="toggleFilter(this, 'BLOCKER')">BLOCKER</button>
+<button onclick="toggleFilter(this, 'RUSH')">RUSH</button>
+<button onclick="toggleFilter(this, 'UNBLOCKABLE')">UNBLOCKABLE</button>
+<button onclick="toggleFilter(this, 'DOUBLE_ATTACK')">DOUBLE_ATTACK</button>
+<button class="secondary" onclick="showAll()">Remove Filters</button>
 <button class="secondary" onclick="copyVisibleToSim()" title="Copy currently visible cards as OPTCGSim decklist">Copy visible to OPTCGSim</button>
 
 </div>
@@ -3942,6 +3941,9 @@ function copyVisibleToSim() {
 }
 
 function applySearch() {
+  applyAllFilters();
+  return;
+  // original below (unreachable)
   const q = (document.getElementById('search').value || '').trim().toLowerCase();
   document.querySelectorAll('.card').forEach(c => {
     if (c.classList.contains('hidden')) return;
@@ -3960,6 +3962,53 @@ function clearSearch() {
   document.querySelectorAll('.filter button').forEach(b => b.classList.remove('active'));
   const allBtn = document.querySelector('.filter button');
   if (allBtn) allBtn.classList.add('active');
+}
+
+let selectedFilters = new Set();
+
+function toggleFilter(btn, label) {
+  if (selectedFilters.has(label)) {
+    selectedFilters.delete(label);
+    btn.classList.remove('active');
+  } else {
+    selectedFilters.add(label);
+    btn.classList.add('active');
+  }
+  applyAllFilters();
+}
+
+function applyAllFilters() {
+  const q = (document.getElementById('search')?.value || '').trim().toLowerCase();
+  document.querySelectorAll('.card').forEach(c => {
+    if (c.classList.contains('hidden')) return;
+    const labels = (c.dataset.labels || '').split(' ').filter(Boolean);
+    const hasAll = selectedFilters.size === 0 || [...selectedFilters].every(f => labels.includes(f));
+    const id = (c.querySelector('.card-id')?.textContent || '').toLowerCase();
+    const name = (c.querySelector('.card-name')?.textContent || '').toLowerCase();
+    const text = (c.querySelector('.card-text')?.textContent || '').toLowerCase();
+    const textMatch = !q || id.includes(q) || name.includes(q) || text.includes(q);
+    c.style.display = (hasAll && textMatch) ? 'flex' : 'none';
+  });
+}
+
+function clearFilters() {
+  selectedFilters.clear();
+  document.querySelectorAll('.filter button').forEach(b => b.classList.remove('active'));
+  applyAllFilters();
+}
+
+// Override showAll to also clear filters
+const _origShowAll = typeof showAll === 'function' ? showAll : null;
+function showAll() {
+  document.querySelectorAll('.card').forEach(c => {
+    c.classList.remove('hidden', 'minimized');
+    c.style.display = 'flex';
+  });
+  document.querySelectorAll('.card-actions button[title="Collapse text"]').forEach(b => b.textContent = '−');
+  selectedFilters.clear();
+  document.querySelectorAll('.filter button').forEach(b => b.classList.remove('active'));
+  const search = document.getElementById('search');
+  if (search) search.value = '';
 }
 </script>
 </body>
