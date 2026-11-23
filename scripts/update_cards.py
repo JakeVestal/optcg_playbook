@@ -32,6 +32,12 @@ def extract_tags(effect, counter, category):
         t.add("UNBLOCKABLE")
     if "double attack" in e:
         t.add("DOUBLE_ATTACK")
+    if "on k.o." in e or "[on k.o.]" in e:
+        t.add("ON_KO")
+    if category and category.upper() == "STAGE":
+        t.add("STAGE")
+    if category and category.upper() == "EVENT":
+        t.add("EVENT")
     c = str(counter or "")
     if c in ("2000", "2000.0"):
         t.add("COUNTER2000")

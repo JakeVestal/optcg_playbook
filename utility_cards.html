@@ -80,6 +80,9 @@ Loads from <code>data/cards.csv</code> (updated nightly from optcgjson). Click t
   <button onclick="toggleTag(this, 'DOUBLE_ATTACK')">DOUBLE_ATTACK</button>
   <button onclick="toggleTag(this, 'COUNTER2000')">+2000</button>
   <button onclick="toggleTag(this, 'COUNTER1000')">+1000</button>
+  <button onclick="toggleTag(this, 'ON_KO')">ON K.O.</button>
+  <button onclick="toggleCategory(this, 'STAGE')">Stages</button>
+  <button onclick="toggleCategory(this, 'EVENT')">Events</button>
   <button class="secondary" onclick="clearTags()">Remove Tag Filters</button>
   <button class="secondary" onclick="copyVisible()">Copy visible to OPTCGSim</button>
 </div>
@@ -95,6 +98,7 @@ Loads from <code>data/cards.csv</code> (updated nightly from optcgjson). Click t
 let allCards = [];
 let activeColors = new Set();
 let activeTags = new Set();
+let activeCategories = new Set();
 
 async function load() {
   const res = await fetch('data/cards.csv');
@@ -143,9 +147,13 @@ function render() {
     const colors = (c.colors || '').split('|');
     const tags = (c.tags || '').split(',').filter(Boolean);
     const colorMatch = activeColors.size === 0 || colors.some(col => activeColors.has(col));
-    const tagMatch = activeTags.size === 0 || [...activeTags].every(t => tags.includes(t));
+    const tagMatch = activeTags.size === 0 || [...activeTags].every(t => {
+      if (t === 'ON_KO') return (c.effect || '').toLowerCase().includes('on k.o.');
+      return tags.includes(t);
+    });
+    const catMatch = activeCategories.size === 0 || activeCategories.has((c.category || '').toUpperCase());
     const searchMatch = !search || (c.id + c.name + c.effect).toLowerCase().includes(search);
-    if (!colorMatch || !tagMatch || !searchMatch) return;
+    if (!colorMatch || !tagMatch || !catMatch || !searchMatch) return;
     const div = document.createElement('div');
     div.className = 'card';
     div.dataset.id = c.id;
@@ -182,7 +190,12 @@ function toggleTag(btn, tag) {
   render();
 }
 function clearColors() { activeColors.clear(); document.querySelectorAll('#color-filter button').forEach(b => b.classList.remove('active')); render(); }
-function clearTags() { activeTags.clear(); document.querySelectorAll('#tag-filter button').forEach(b => b.classList.remove('active')); render(); }
+function toggleCategory(btn, cat) {
+  btn.classList.toggle('active');
+  if (activeCategories.has(cat)) activeCategories.delete(cat); else activeCategories.add(cat);
+  render();
+}
+function clearTags() { activeTags.clear(); activeCategories.clear(); document.querySelectorAll('#tag-filter button').forEach(b => b.classList.remove('active')); render(); }
 function clearSearch() { document.getElementById('search').value = ''; render(); }
 function applyFilters() { render(); }
 function openModal(src) { document.getElementById('modal-img').src = src; document.getElementById('modal').classList.add('open'); }
