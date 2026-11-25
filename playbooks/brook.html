@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Brook Playbook</title>
+<title>Green/Black Brook Playbook</title>
 <style>
 :root { --bg:#0f1419; --card:#1a2332; --text:#e6edf3; --muted:#8b949e; --accent:#3fb950; --warn:#d29922; --danger:#f85149; --border:#30363d; }
 body { font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); margin:0; padding:16px; max-width:900px; margin:auto; line-height:1.55; }
 h1 { color:#58a6ff; margin:0 0 8px; }
 h2 { color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:4px; margin:28px 0 10px; }
+h3 { color:#58a6ff; margin:14px 0 6px; font-size:1em; }
 .subtitle { color:var(--muted); margin-bottom:16px; }
 .general, .matchup, .note, .swing { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin:12px 0; }
 .note { border-left:3px solid var(--warn); }
@@ -18,162 +19,265 @@ h2 { color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:
 .nav { margin:8px 0 16px; }
 .nav a { color:#58a6ff; margin-right:12px; text-decoration:none; }
 .nav a:hover { text-decoration:underline; }
+.card-row { display:flex; gap:10px; flex-wrap:wrap; margin:10px 0; }
+.card-row img { width:90px; height:auto; border-radius:6px; cursor:pointer; border:1px solid #444; }
+.card-row img:hover { opacity:0.85; }
+.label { font-size:0.75em; color:var(--muted); text-align:center; margin-top:2px; }
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center; }
+.modal.open { display:flex; }
+.modal img { max-width:90%; max-height:90%; border-radius:8px; }
 </style>
 </head>
 <body>
-<h1>Brook Playbook (OP15-022)</h1>
-<p class="subtitle">Green/Black self-mill. Advice for when you are playing Brook against each matchup.</p>
+<h1>Green/Black Brook Playbook (OP15-022)</h1>
+<p class="subtitle">Mill restand. Advice for when you are playing Brook against each matchup.</p>
 <p class="nav"><a href="../index.html">← Utility Cards</a> <a href="../playbook.html">Bonney</a> <a href="zoro.html">Zoro</a> <a href="franky.html">Franky</a> <a href="karoo.html">Karoo</a></p>
 
 <div class="general">
-<strong>Your plan:</strong> Mill 4 cards a turn, fill trash, then use 8c Nami to cheat Luffys from trash with Rush. On the turn the deck hits 0 you restand a Character for an extra attack. Protect the Nami → Luffy line and set up the 0-deck finish.
+<strong>Your plan:</strong> You do not lose when your deck reaches 0 cards — you lose at the end of that turn. Your Activate lets you trash 4 from the top of your deck; if the deck then has 0 cards, restand up to 1 Character. The engine is milling toward empty deck so the restand becomes available, then winning on the turn the deck hits 0 (or the next). Use green/black tools to control the board while you mill. The restand is the payoff — protect the turn you empty the deck.
 </div>
 
 <div class="matchup">
 <h2>Black Imu</h2>
+<div class="card-row">
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP13-079" onclick="openModal(this.src)"><div class="label">OP13-079 Imu</div></div>
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP13-082" onclick="openModal(this.src)"><div class="label">OP13-082 Five Elders</div></div>
+</div>
+<p><strong>Win condition:</strong> Flood with Celestial Dragons, then OP13-082 trashes the board and replays up to five 5000-power Elders from trash. Once trash ≥7 most Elders cannot be removed by effects.</p>
+<p><strong>Effect KO:</strong> No. Your tools are battle and mill, not effect KO.</p>
+<p><strong>Key turn:</strong> OP13-082 hits. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Mill while you clear the value Elders. The restand on empty deck lets you swing again after a clear.</p>
+<p><strong>Your plan:</strong> Race early life while milling. Clear value Elders and blockers. Do not leave two high-value targets if Rayleigh is in hand. The restand helps finish the turn you empty.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Elders are sticky. Your cheated Luffys can trade into them or race life.</li>
-<li>Do not let Imu free-develop a wide Elder board before your Nami comes online.</li>
-<li>Empty Throne cannot be destroyed by green. Ignore it.</li>
+  <li>Value Elders and blockers</li>
+  <li>OP13-082 when it appears</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Mill, then Nami a Luffy to clear an Elder or race life. Set up the 0-deck finish.</div>
+<div class="swing"><strong>Swing note:</strong> Clear an Elder, mill toward empty, restand on the empty turn for the extra swing. Empty Throne cannot be destroyed by green — ignore it.</div>
+<p><strong>Nasty tricks:</strong> Starts with The Empty Throne free. Plays Five Elders for 3 DON!! via the Stage. OP13-082 trashes the whole board and plays up to 5 different Elders from trash.</p>
 </div>
 
 <div class="matchup">
 <h2>Purple Enel</h2>
+<div class="card-row">
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP15-058" onclick="openModal(this.src)"><div class="label">OP15-058 Enel</div></div>
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP15-118" onclick="openModal(this.src)"><div class="label">6-cost Enel</div></div>
+</div>
+<p><strong>Win condition:</strong> 6-DON!! deck. Leader dumps 5 DON!! at once and attaches 4 rested DON!! to a cheap body for 10k–14k swings. Closes with sticky 6-cost Enel.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Leader ability goes off and a 1-cost or the 6-cost Enel receives the 4 DON!!. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Clear the body that just received the DON!! or the 6c Enel while you mill. The restand on empty helps finish the turn.</p>
+<p><strong>Your plan:</strong> Take life early. Mill while you clear the pumped body or 6c Enel. Do not let Enel reach a comfortable 6+ DON!! turn with multiple big bodies. The restand helps the empty-deck turn.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Rest or clear the 6c Enel so it cannot grow. Your 6c Brook can rest it.</li>
-<li>Cheated Luffys can trade into the big Enel or race life.</li>
-<li>Charlottes can scale — remove the small ones if free.</li>
+  <li>The Character that just received the 4 DON!!</li>
+  <li>OP15-060 / OP15-118 Enel</li>
+  <li>Ohm, Shura</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Rest the big Enel, then Nami a Luffy to clear it or race. Set up the 0-deck turn.</div>
+<div class="swing"><strong>Swing note:</strong> Clear the pumped body or 6c Enel while milling. Restand on empty for the extra swing. The 6c Enel is sticky but still dies to a battle.</div>
+<p><strong>Nasty tricks:</strong> DON!! deck is only 6 cards. Leader adds 1 active + 4 rested and attaches the 4 to one Character for massive swings. 6-cost Enel is sticky.</p>
 </div>
 
 <div class="matchup">
 <h2>Rocks D. Xebec</h2>
+<div class="card-row">
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-039" onclick="openModal(this.src)"><div class="label">OP17-039 Rocks</div></div>
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-054" onclick="openModal(this.src)"><div class="label">Stussy</div></div>
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-040" onclick="openModal(this.src)"><div class="label">Newgate</div></div>
+</div>
+<p><strong>Win condition:</strong> Builds with Stussy / Newgate / Shiki / Captain John, then OP17-118 plays two Rocks Pirates for a free board. Captain John forces all attacks onto him when rested.</p>
+<p><strong>Effect KO:</strong> Limited. Stussy locks attackers.</p>
+<p><strong>Key turn:</strong> 10-cost Rocks hits, or when Captain John rests. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Do not let him build. Clear Stussy, Newgate, or John (must attack John if rested) while you mill. The restand on empty helps finish a clear or hit life.</p>
+<p><strong>Your plan:</strong> Keep pressure so he cannot freely develop. Mill while you clear threats. Having your own midrange bodies is critical for trading. The restand helps the empty-deck turn.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Do not let Rocks build. Prioritize Stussy, Newgate, and Captain John (must attack John if rested).</li>
-<li>Your cheated Luffys can clear them. Use the 0-deck restand for an extra swing.</li>
-<li>Big bodies are the problem — do not let him free-develop Newgate/Stussy.</li>
+  <li>Stussy</li>
+  <li>Newgate</li>
+  <li>Captain John (must attack if rested)</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Newgate/Stussy/John with cheated Luffys. Race or set up the 0-deck finish.</div>
+<div class="swing"><strong>Swing note:</strong> Against a rested Captain John you have no choice — everything must attack him. Clear threats while milling. Restand on empty for the extra swing.</div>
+<p><strong>Nasty tricks:</strong> OP17-118 plays two Rocks Pirates for free. Captain John forces all attacks onto him when rested. Stussy locks attackers.</p>
 </div>
 
 <div class="matchup">
 <h2>Purple/Yellow Robin</h2>
+<p><strong>Win condition:</strong> Leader attacks to Banish and ramp. Accelerates into the Big Mom / Charlotte package for Life burn and heals.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> She ramps, then drops a high-cost Charlotte. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Clear small Charlottes before Linlin while you mill. Do not leave Smoothie or Perospero active. The restand on empty helps finish the turn.</p>
+<p><strong>Your plan:</strong> Race while the board is thin. Mill toward empty. Banish is a problem — do not leave rested bodies she can punish. Race before Linlin arrives.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Remove the small Charlottes before Linlin. Your rest + cheated Luffys can clear them.</li>
-<li>Banish is a problem — do not leave rested bodies she can punish.</li>
-<li>Race before Linlin arrives, or set up the 0-deck turn to finish.</li>
+  <li>Small Charlottes before Linlin</li>
+  <li>Smoothie, Perospero</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Charlottes. Race or set up the multi-attack finish.</div>
+<div class="swing"><strong>Swing note:</strong> Clear Charlottes while milling. Restand on empty and race before Linlin.</div>
+<p><strong>Nasty tricks:</strong> Banish on Leader attack. Charlottes scale with Linlin. Heals and Life burn.</p>
 </div>
 
 <div class="matchup">
 <h2>Portgas D. Ace</h2>
+<p><strong>Win condition:</strong> Early Rush attackers. Builds a board of Whitebeard Pirates that can attack immediately.</p>
+<p><strong>Effect KO:</strong> Limited. Marco’s On-KO is annoying.</p>
+<p><strong>Key turn:</strong> Early Rush bodies come down. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Clear the early Rush threats while you mill. Do not let him free-swing. The restand on empty helps finish the turn.</p>
+<p><strong>Your plan:</strong> Clear the early attackers. Garp is mostly a small body — ignore unless the board is empty. Do not overcommit into a board Marco can rebuild.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Ace has early Rush. Your early mill and small bodies can trade, then Nami a Luffy to clear or race.</li>
-<li>Garp is mostly a small body — ignore unless needed.</li>
-<li>Marco’s On-KO is annoying. Do not overcommit into a board he can rebuild.</li>
+  <li>Early Rush attackers</li>
+  <li>Marco (On-KO)</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Survive the early Rush, then Nami a Luffy to clear or race. Set up the 0-deck turn.</div>
+<div class="swing"><strong>Swing note:</strong> Clear early Rush threats while milling. Restand on empty for the extra swing. Garp is usually not worth the attack.</div>
+<p><strong>Nasty tricks:</strong> Early Rush. Marco rebuilds on KO. Garp is mostly a small body with an on-play.</p>
 </div>
 
 <div class="matchup">
 <h2>Red/Black Sabo</h2>
+<p><strong>Win condition:</strong> Rests Straw Hats and powers up with Loki. Builds a board of big bodies.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Loki comes down. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Clear Loki while you mill. Your Leader is Straw Hat, so be careful when he can rest you before your empty-deck turn. The restand on empty helps finish the turn.</p>
+<p><strong>Your plan:</strong> Clear Loki. Race or trade the big bodies. Mill toward empty. Carrot is weak against high-cost giants — focus the enablers or race.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Sabo rests Straw Hats. Your Leader is Straw Hat, so be careful.</li>
-<li>Loki is the engine — clear him with a cheated Luffy.</li>
-<li>Carrot is weak against high-cost giants. If he has big bodies, focus life or Loki.</li>
+  <li>Loki</li>
+  <li>Key enablers</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Loki. Watch for Straw Hat rest. Set up the 0-deck finish.</div>
+<div class="swing"><strong>Swing note:</strong> Clear Loki while milling. Restand on empty for the extra swing. Watch for the Straw Hat rest.</div>
+<p><strong>Nasty tricks:</strong> Rests Straw Hats. Loki powers the board. Carrot is weak against high-cost bodies.</p>
 </div>
 
 <div class="matchup">
 <h2>Purple Kaido</h2>
+<p><strong>Win condition:</strong> Ramps DON!! and plays big dragons. King is nearly unkillable by normal means.</p>
+<p><strong>Effect KO:</strong> No. King is effectively unkillable by normal means.</p>
+<p><strong>Key turn:</strong> Big dragons come down after the ramp. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Ignore King. Clear the attackers that can hit you while you mill. Race before the package comes fully online. The restand on empty helps finish the turn.</p>
+<p><strong>Your plan:</strong> Race life. Clear the attackers that can hit you. Do not waste resources on King. Mill toward empty.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>King is nearly unkillable by normal means — ignore him and race.</li>
-<li>Your cheated Luffys can clear the other dragons or race life.</li>
-<li>Set up the 0-deck turn for an extra attack.</li>
+  <li>Attackers that can hit you</li>
+  <li>Ignore King</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Ignore King. Clear other dragons or race with cheated Luffys + 0-deck restand.</div>
+<div class="swing"><strong>Swing note:</strong> Clear threats while milling. Restand on empty and race. King is not worth the attack.</div>
+<p><strong>Nasty tricks:</strong> King returns or is effectively unkillable. Big dragons after ramp.</p>
 </div>
 
 <div class="matchup">
 <h2>Blue/Yellow Boa Hancock</h2>
+<p><strong>Win condition:</strong> Rests and manipulates DON!!. Builds a board that controls your attacks.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> She rests key bodies or manipulates DON!! to lock the board. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Clear her key bodies (especially DON!! enablers) while you mill. The restand on empty gives you the extra swing even if she rests things.</p>
+<p><strong>Your plan:</strong> Keep the mill going. Clear enablers. The restand helps the empty-deck turn. You do not need heavy DON!! disruption; the mill + restand is the pressure.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Boa rests and manipulates DON!!. Your rest effects can answer her bodies.</li>
-<li>Cheated Luffys can clear her enablers or race life.</li>
-<li>You do not need heavy DON!! disruption; your combat is the answer.</li>
+  <li>DON!! enablers</li>
+  <li>Key bodies</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Rest and clear her key bodies with cheated Luffys. Race or set up the 0-deck finish.</div>
+<div class="swing"><strong>Swing note:</strong> Clear key bodies while milling. Restand on empty for the extra attack.</div>
+<p><strong>Nasty tricks:</strong> Rests and manipulates DON!!. Can lock the board if you let her set up.</p>
 </div>
 
 <div class="matchup">
 <h2>Black Elbaph Luffy</h2>
+<p><strong>Win condition:</strong> Builds giants with Loki as the engine.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Loki comes down and powers the giant board. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Clear Loki while you mill. Do not let him free-develop a wide giant board. The restand on empty helps finish the turn.</p>
+<p><strong>Your plan:</strong> Clear Loki. Race or trade the giants before they snowball. Mill toward empty.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Loki is the engine — clear him with a cheated Luffy.</li>
-<li>Giants are big. Your multi-attack Luffys can trade or race.</li>
-<li>Do not let him free-develop a wide giant board.</li>
+  <li>Loki</li>
+  <li>Key giants</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Loki. Trade or race the giants with cheated Luffys + 0-deck restand.</div>
+<div class="swing"><strong>Swing note:</strong> Clear Loki while milling. Restand on empty for the extra swing.</div>
+<p><strong>Nasty tricks:</strong> Loki powers the board. Giants scale quickly once established.</p>
 </div>
 
 <div class="matchup">
 <h2>Luffy & Ace / Red-Green Luffy</h2>
+<p><strong>Win condition:</strong> Wants 6000-base Luffy/Ace bodies that become 9000 on defense.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Wide 6000-power board is established. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Clear the 6000-power bodies or race while you mill. Do not let him set up the defensive wall. The restand on empty helps finish the turn.</p>
+<p><strong>Your plan:</strong> Race early. Clear the 6000-power bodies before they become 9000 walls. Mill toward empty.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>L&A wants 6000-base bodies. Your cheated Luffys can clear them or race life.</li>
-<li>Do not let him set up a wide 6000-power board that becomes 9000 on defense.</li>
-<li>Race early or set up the 0-deck finish.</li>
+  <li>6000-power Luffy/Ace bodies</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear the 6000-power bodies or race with multi-attack Luffys.</div>
+<div class="swing"><strong>Swing note:</strong> Clear the 6000-power bodies or race while milling. Restand on empty.</div>
+<p><strong>Nasty tricks:</strong> 6000-base bodies become 9000 on defense. High defensive power once established.</p>
 </div>
 
 <div class="matchup">
 <h2>Charlotte Pudding</h2>
+<p><strong>Win condition:</strong> Small Charlottes scale with Linlin. Builds into Life burn and heals.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Linlin arrives and the package comes online. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Clear small Charlottes early while you mill. Race before the package comes online. The restand on empty helps finish the turn.</p>
+<p><strong>Your plan:</strong> Clear Charlottes early. Race life. Mill toward empty. Do not leave the small ones to scale.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Remove the small Charlottes early.</li>
-<li>Race or set up the 0-deck finish before the package comes online.</li>
+  <li>Small Charlottes</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Charlottes. Race or finish with the 0-deck turn.</div>
-</div>
-
-<div class="matchup">
-<h2>Purple/Yellow Nico Robin</h2>
-<ul class="priority">
-<li>Same as PY Robin. Clear Charlottes, watch for Banish, race or finish before Linlin.</li>
-</ul>
-<div class="swing"><strong>Line:</strong> Clear Charlottes. Race or set up the multi-attack finish.</div>
+<div class="swing"><strong>Swing note:</strong> Clear Charlottes while milling. Restand on empty and race.</div>
+<p><strong>Nasty tricks:</strong> Charlottes scale with Linlin. Heals and Life burn once the package is online.</p>
 </div>
 
 <div class="matchup">
 <h2>Green Shanks</h2>
+<p><strong>Win condition:</strong> Yasopp enables big Shanks. Builds a board of high-power bodies.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Yasopp comes down and enables the big bodies. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Clear Yasopp while you mill. Do not let him free-develop the big bodies. The restand on empty helps finish the turn.</p>
+<p><strong>Your plan:</strong> Clear Yasopp. Race or trade the big Shanks. Mill toward empty.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Yasopp is the enabler — clear him.</li>
-<li>Big Shanks is the problem. Your cheated Luffys can trade or race.</li>
-<li>Do not let him free-develop the big bodies.</li>
+  <li>Yasopp</li>
+  <li>Big Shanks</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Yasopp. Trade or race with cheated Luffys + 0-deck restand.</div>
+<div class="swing"><strong>Swing note:</strong> Clear Yasopp while milling. Restand on empty. Race or trade the big Shanks.</div>
+<p><strong>Nasty tricks:</strong> Yasopp enables the big bodies. High-power board once established.</p>
 </div>
 
 <div class="matchup">
 <h2>Yellow Enel</h2>
+<p><strong>Win condition:</strong> Wants life and triggers. Builds a board that can clear with triggers.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Triggers start clearing the board. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Race or clear while you mill. Do not overcommit into a board he can clear with triggers. The restand on empty helps finish the turn.</p>
+<p><strong>Your plan:</strong> Race life. Watch for triggers. Mill toward empty.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Yellow Enel wants life and triggers. Your multi-attack Luffys can race him.</li>
-<li>Do not overcommit into a board he can clear with triggers.</li>
+  <li>Key bodies</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Race with cheated Luffys. Watch for triggers. Set up the 0-deck finish.</div>
+<div class="swing"><strong>Swing note:</strong> Race or clear while milling. Restand on empty. Watch for triggers.</div>
+<p><strong>Nasty tricks:</strong> Triggers can clear the board. Life-based engine.</p>
 </div>
 
 <div class="matchup">
 <h2>Black Yamato</h2>
+<p><strong>Win condition:</strong> Control/midrange. Locks the board with key bodies.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Key control pieces come down. Your empty-deck turn is the payoff.</p>
+<p><strong>Disrupt:</strong> Clear her key bodies or race while you mill. Do not let her lock the board. The restand on empty helps finish the turn.</p>
+<p><strong>Your plan:</strong> Clear key bodies or race. Mill toward empty.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Yamato is control/midrange. Your cheated Luffys can clear her key bodies or race.</li>
-<li>Set up the 0-deck finish before she locks the board.</li>
+  <li>Key control bodies</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear key bodies or race with multi-attack Luffys + 0-deck restand.</div>
+<div class="swing"><strong>Swing note:</strong> Clear key bodies or race while milling. Restand on empty.</div>
+<p><strong>Nasty tricks:</strong> Control pieces that lock the board. Midrange value.</p>
 </div>
 
 <p class="nav"><a href="../index.html">← Utility Cards</a> <a href="../playbook.html">Bonney</a> <a href="zoro.html">Zoro</a> <a href="franky.html">Franky</a> <a href="karoo.html">Karoo</a></p>
+
+<div class="modal" id="modal" onclick="closeModal()"><img id="modal-img" src="" alt=""></div>
+<script>
+function openModal(src) { document.getElementById('modal-img').src = src; document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+</script>
 </body>
 </html>

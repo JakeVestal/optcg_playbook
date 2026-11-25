@@ -9,6 +9,7 @@
 body { font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); margin:0; padding:16px; max-width:900px; margin:auto; line-height:1.55; }
 h1 { color:#58a6ff; margin:0 0 8px; }
 h2 { color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:4px; margin:28px 0 10px; }
+h3 { color:#58a6ff; margin:14px 0 6px; font-size:1em; }
 .subtitle { color:var(--muted); margin-bottom:16px; }
 .general, .matchup, .note, .swing { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin:12px 0; }
 .note { border-left:3px solid var(--warn); }
@@ -18,162 +19,268 @@ h2 { color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:
 .nav { margin:8px 0 16px; }
 .nav a { color:#58a6ff; margin-right:12px; text-decoration:none; }
 .nav a:hover { text-decoration:underline; }
+.card-row { display:flex; gap:10px; flex-wrap:wrap; margin:10px 0; }
+.card-row img { width:90px; height:auto; border-radius:6px; cursor:pointer; border:1px solid #444; }
+.card-row img:hover { opacity:0.85; }
+.label { font-size:0.75em; color:var(--muted); text-align:center; margin-top:2px; }
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center; }
+.modal.open { display:flex; }
+.modal img { max-width:90%; max-height:90%; border-radius:8px; }
 </style>
 </head>
 <body>
 <h1>Karoo Playbook (OP18-001)</h1>
-<p class="subtitle">Red/Blue Animal + Alabasta rush. Advice for when you are playing Karoo against each matchup.</p>
+<p class="subtitle">Red/Blue Animal + Alabasta Rush. Advice for when you are playing Karoo against each matchup.</p>
 <p class="nav"><a href="../index.html">← Utility Cards</a> <a href="../playbook.html">Bonney</a> <a href="zoro.html">Zoro</a> <a href="brook.html">Brook</a> <a href="franky.html">Franky</a></p>
 
 <div class="general">
-<strong>Your plan:</strong> Play Animal + Alabasta Characters with Rush and +1000 power. Swarm with small-to-mid animals that attack immediately, draw when they die, and look for the 3c Karoo + Vivi line into Banish/Unblockable. Race life; do not let the opponent stabilize.
+<strong>Your plan:</strong> All of your Characters with both the Animal and Alabasta types gain Rush and +1000 power. Once per turn, when your Alabasta Character is K.O.'d, draw 1 card. The engine is swarming with small-to-mid Animal + Alabasta bodies that attack the turn they are played, drawing when they die to keep gas. Race life. Do not let the opponent stabilize. Look for lines into Banish/Unblockable when available. Your animals are not Straw Hats, so Sabo-style rests are less punishing.
 </div>
 
 <div class="matchup">
 <h2>Black Imu</h2>
+<div class="card-row">
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP13-079" onclick="openModal(this.src)"><div class="label">OP13-079 Imu</div></div>
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP13-082" onclick="openModal(this.src)"><div class="label">OP13-082 Five Elders</div></div>
+</div>
+<p><strong>Win condition:</strong> Flood with Celestial Dragons, then OP13-082 trashes the board and replays up to five 5000-power Elders from trash. Once trash ≥7 most Elders cannot be removed by effects.</p>
+<p><strong>Effect KO:</strong> No. Your tools are Rush and trade, not effect KO.</p>
+<p><strong>Key turn:</strong> OP13-082 hits. Your Rush flock is faster early.</p>
+<p><strong>Disrupt:</strong> Chip life before the Elders come down. Once Elders are out they are sticky and can block. Prioritize the ones that generate value or the blockers. Trade when the math is good, otherwise keep swinging at life.</p>
+<p><strong>Your plan:</strong> Race early. Your Rush animals can hit life before the Elders come down. Do not overcommit into a board you cannot clear. Use the draw on K.O. to keep gas.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Imu cheats Five Elders and builds a wide board. Your Rush flock is faster early — chip life before the Elders come down.</li>
-<li>Once Elders are out they are sticky and can block. Prioritize the ones that generate value or the blockers.</li>
-<li>Do not overcommit into a board you cannot clear. Trade the Elders when the math is good, otherwise keep swinging at life.</li>
+  <li>Value Elders and blockers once they are out</li>
+  <li>Life early</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Early Rush pressure, then decide whether to clear Elders or race the Leader.</div>
+<div class="swing"><strong>Swing note:</strong> Early Rush pressure, then decide whether to clear Elders or race the Leader. Your animals draw on death, so trading is not pure downside.</div>
+<p><strong>Nasty tricks:</strong> Starts with The Empty Throne free. Plays Five Elders for 3 DON!! via the Stage. OP13-082 trashes the whole board and plays up to 5 different Elders from trash.</p>
 </div>
 
 <div class="matchup">
 <h2>Purple Enel</h2>
+<div class="card-row">
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP15-058" onclick="openModal(this.src)"><div class="label">OP15-058 Enel</div></div>
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP15-118" onclick="openModal(this.src)"><div class="label">6-cost Enel</div></div>
+</div>
+<p><strong>Win condition:</strong> 6-DON!! deck. Leader dumps 5 DON!! at once and attaches 4 rested DON!! to a cheap body for 10k–14k swings. Closes with sticky 6-cost Enel.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Leader ability goes off and a 1-cost or the 6-cost Enel receives the 4 DON!!.</p>
+<p><strong>Disrupt:</strong> Your Rush animals can hit life before he stabilizes. Rest or trade the 6c Enel when it appears; do not let it sit and grow. Charlottes can scale later — remove the small ones if you have a free attack, but life is usually higher priority.</p>
+<p><strong>Your plan:</strong> Race early. Do not let Enel reach a comfortable 6+ DON!! turn with multiple big bodies. Use the draw on K.O. to keep pressure.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Enel ramps DON!! and plays big 6c Enels that become hard to remove. Your Rush animals can hit life before he stabilizes.</li>
-<li>Rest or trade the 6c Enel when it appears; do not let it sit and grow.</li>
-<li>Charlottes can scale later — remove the small ones if you have a free attack, but life is usually higher priority.</li>
+  <li>Life early</li>
+  <li>6c Enel when it appears</li>
+  <li>Small Charlottes if free</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Race early. Do not let Enel reach a comfortable 6+ DON!! turn with multiple big bodies.</div>
+<div class="swing"><strong>Swing note:</strong> Race early. Trade the 6c Enel if the math is good. Do not leave a 10k+ attacker active.</div>
+<p><strong>Nasty tricks:</strong> DON!! deck is only 6 cards. Leader adds 1 active + 4 rested and attaches the 4 to one Character for massive swings. 6-cost Enel is sticky.</p>
 </div>
 
 <div class="matchup">
 <h2>Rocks D. Xebec</h2>
+<div class="card-row">
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-039" onclick="openModal(this.src)"><div class="label">OP17-039 Rocks</div></div>
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-054" onclick="openModal(this.src)"><div class="label">Stussy</div></div>
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-040" onclick="openModal(this.src)"><div class="label">Newgate</div></div>
+</div>
+<p><strong>Win condition:</strong> Builds with Stussy / Newgate / Shiki / Captain John, then OP17-118 plays two Rocks Pirates for a free board. Captain John forces all attacks onto him when rested.</p>
+<p><strong>Effect KO:</strong> Limited. Stussy locks attackers.</p>
+<p><strong>Key turn:</strong> 10-cost Rocks hits, or when Captain John rests.</p>
+<p><strong>Disrupt:</strong> Do not let Rocks build. Prioritize Stussy, Newgate, and Captain John (must attack John if rested). Your Rush animals can chip life while also trading his key bodies. Use the draw on K.O. to keep gas.</p>
+<p><strong>Your plan:</strong> Chip and clear. Do not give him free turns to develop Newgate/Stussy. Big bodies are critical for you too — clear his threats or race before he snowballs.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Do not let Rocks build. Prioritize Stussy, Newgate, and Captain John (you must attack John if he is rested).</li>
-<li>Your Rush animals can chip life while also trading his key bodies. Use the draw on K.O. to keep gas.</li>
-<li>Big bodies are critical for you too — clear his threats or race before he snowballs.</li>
+  <li>Stussy</li>
+  <li>Newgate</li>
+  <li>Captain John (must attack if rested)</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Chip and clear. Do not give him free turns to develop Newgate/Stussy.</div>
+<div class="swing"><strong>Swing note:</strong> Against a rested Captain John you have no choice — everything must attack him. Chip life and clear key bodies. Use the draw on death to keep pressure.</div>
+<p><strong>Nasty tricks:</strong> OP17-118 plays two Rocks Pirates for free. Captain John forces all attacks onto him when rested. Stussy locks attackers.</p>
 </div>
 
 <div class="matchup">
 <h2>Purple/Yellow Robin</h2>
+<p><strong>Win condition:</strong> Leader attacks to Banish and ramp. Accelerates into the Big Mom / Charlotte package for Life burn and heals.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> She ramps, then drops a high-cost Charlotte.</p>
+<p><strong>Disrupt:</strong> Your Rush animals can hit life before she stabilizes. Remove small Charlottes if free, but life is usually higher priority. Banish is a problem — do not leave rested bodies she can punish.</p>
+<p><strong>Your plan:</strong> Race early. Clear Charlottes if free. Do not let her ramp into the package. Use the draw on K.O. to keep gas.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Robin wants to set up Charlottes and Linlin. Remove the small Charlottes before they get buffed.</li>
-<li>Banish is a problem if she has it — do not leave rested animals that she can punish.</li>
-<li>Your Rush pressure can race her before the Charlotte package comes online.</li>
+  <li>Life early</li>
+  <li>Small Charlottes if free</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Kill the small Charlottes. Race life before Linlin arrives.</div>
+<div class="swing"><strong>Swing note:</strong> Race early. Clear Charlottes if free. Do not leave rested bodies for Banish.</div>
+<p><strong>Nasty tricks:</strong> Banish on Leader attack. Charlottes scale with Linlin. Heals and Life burn.</p>
 </div>
 
 <div class="matchup">
 <h2>Portgas D. Ace</h2>
+<p><strong>Win condition:</strong> Early Rush attackers. Builds a board of Whitebeard Pirates that can attack immediately.</p>
+<p><strong>Effect KO:</strong> Limited. Marco’s On-KO is annoying.</p>
+<p><strong>Key turn:</strong> Early Rush bodies come down.</p>
+<p><strong>Disrupt:</strong> Trade the early Rush threats. Your animals also have Rush, so you can match the tempo. Do not let him free-swing into your life. Garp is mostly a small body — ignore unless the board is empty.</p>
+<p><strong>Your plan:</strong> Match the early Rush. Trade or clear the attackers. Do not overcommit into a board Marco can rebuild. Use the draw on K.O. to keep gas.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Ace has Rush on Whitebeard Pirates and can swing hard early. Your animals also have Rush — trade when the math is bad for him.</li>
-<li>Garp is mostly a small body with an on-play. Ignore him unless the board is empty.</li>
-<li>Marco’s On-KO revive is annoying. Do not overcommit into a board he can rebuild.</li>
+  <li>Early Rush attackers</li>
+  <li>Marco (On-KO)</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Trade the early Rush threats. Do not let him free-swing into your life.</div>
+<div class="swing"><strong>Swing note:</strong> Trade the early Rush threats. Do not let him free-swing into your life. Garp is usually not worth the attack.</div>
+<p><strong>Nasty tricks:</strong> Early Rush. Marco rebuilds on KO. Garp is mostly a small body with an on-play.</p>
 </div>
 
 <div class="matchup">
 <h2>Red/Black Sabo</h2>
+<p><strong>Win condition:</strong> Rests Straw Hats and powers up with Loki. Builds a board of big bodies.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Loki comes down and powers the board.</p>
+<p><strong>Disrupt:</strong> Sabo hangs back and rests Straw Hats. Your animals are not Straw Hats, so his rest is less punishing. Loki powers up the board — remove him if he appears. Carrot is weak against high-cost giants. If he has big bodies, focus life or the enablers.</p>
+<p><strong>Your plan:</strong> Your type is not Straw Hat. Use that and keep swinging at life or key bodies. Clear Loki if he appears. Race or trade the big bodies.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Sabo hangs back and rests Straw Hats. Your animals are not Straw Hats, so his rest is less punishing.</li>
-<li>Loki powers up the board — remove him if he appears.</li>
-<li>Carrot is weak against high-cost giants. If he has big bodies, focus life or the enablers.</li>
+  <li>Loki</li>
+  <li>Life or key bodies</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Your type is not Straw Hat. Use that and keep swinging at life or key bodies.</div>
+<div class="swing"><strong>Swing note:</strong> Your type is not Straw Hat. Use that and keep swinging at life or key bodies.</div>
+<p><strong>Nasty tricks:</strong> Rests Straw Hats (less relevant for you). Loki powers the board. Carrot is weak against high-cost bodies.</p>
 </div>
 
 <div class="matchup">
 <h2>Purple Kaido</h2>
+<p><strong>Win condition:</strong> Ramps DON!! and plays big dragons. King is nearly unkillable by normal means.</p>
+<p><strong>Effect KO:</strong> No. King is effectively unkillable by normal means.</p>
+<p><strong>Key turn:</strong> Big dragons come down after the ramp.</p>
+<p><strong>Disrupt:</strong> Ignore King. Your Rush animals can chip life before he reaches his big turns. Focus on clearing the attackers that can actually hit you. DON!! disruption is less relevant for you.</p>
+<p><strong>Your plan:</strong> Race life. Clear the attackers that can hit you. Do not waste resources on King. Use the draw on K.O. to keep gas.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Kaido ramps and plays big dragons. King is nearly unkillable by normal means — ignore him and race.</li>
-<li>Your Rush animals can chip life before he reaches his big turns.</li>
-<li>DON!! disruption is less relevant for you; focus on clearing the attackers that can actually hit you.</li>
+  <li>Attackers that can hit you</li>
+  <li>Ignore King</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Ignore King. Race the Leader before the dragon package comes online.</div>
+<div class="swing"><strong>Swing note:</strong> Ignore King. Race the Leader before the dragon package comes online.</div>
+<p><strong>Nasty tricks:</strong> King returns or is effectively unkillable. Big dragons after ramp.</p>
 </div>
 
 <div class="matchup">
 <h2>Blue/Yellow Boa Hancock</h2>
+<p><strong>Win condition:</strong> Rests and manipulates DON!!. Builds a board that controls your attacks.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> She rests key bodies or manipulates DON!! to lock the board.</p>
+<p><strong>Disrupt:</strong> Boa wants to rest and manipulate DON!!. Your animals attack the turn they are played, so her rest is less effective. Clear her key bodies (especially the ones that enable her DON!! plan) and keep swinging at life. You do not need Arlong-style DON!! disruption as much as a green deck does.</p>
+<p><strong>Your plan:</strong> Rush through her rest. Clear enablers and race life. Use the draw on K.O. to keep gas.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Boa wants to rest and manipulate DON!!. Your animals attack the turn they are played, so her rest is less effective.</li>
-<li>Clear her key bodies (especially the ones that enable her DON!! plan) and keep swinging at life.</li>
-<li>You do not need Arlong-style DON!! disruption as much as a green deck does.</li>
+  <li>DON!! enablers</li>
+  <li>Life</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Rush through her rest. Clear enablers and race life.</div>
+<div class="swing"><strong>Swing note:</strong> Rush through her rest. Clear enablers and race life.</div>
+<p><strong>Nasty tricks:</strong> Rests and manipulates DON!!. Can lock the board if you let her set up.</p>
 </div>
 
 <div class="matchup">
 <h2>Black Elbaph Luffy</h2>
+<p><strong>Win condition:</strong> Builds giants with Loki as the engine.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Loki comes down and powers the giant board.</p>
+<p><strong>Disrupt:</strong> Your Rush animals can trade into them or race life. Loki is the engine — remove him if he appears. Do not let him free-develop a wide giant board.</p>
+<p><strong>Your plan:</strong> Kill Loki. Race or trade the giants before they snowball. Use the draw on K.O. to keep gas.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Elbaph builds giants. Your Rush animals can trade into them or race life.</li>
-<li>Loki is the engine — remove him if he appears.</li>
-<li>Do not let him free-develop a wide giant board.</li>
+  <li>Loki</li>
+  <li>Life or key giants</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Kill Loki. Race or trade the giants before they snowball.</div>
+<div class="swing"><strong>Swing note:</strong> Kill Loki. Race or trade the giants before they snowball.</div>
+<p><strong>Nasty tricks:</strong> Loki powers the board. Giants scale quickly once established.</p>
 </div>
 
 <div class="matchup">
 <h2>Luffy & Ace / Red-Green Luffy</h2>
+<p><strong>Win condition:</strong> Wants 6000-base Luffy/Ace bodies that become 9000 on defense.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Wide 6000-power board is established.</p>
+<p><strong>Disrupt:</strong> Your Rush animals can trade into them or chip life. Do not let him set up a wide 6000-power board that becomes 9000 on defense. Race early; his defensive power is high once established.</p>
+<p><strong>Your plan:</strong> Race early. Clear the 6000-power bodies or race before the defensive wall is set. Use the draw on K.O. to keep gas.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>L&A wants 6000-base Luffy/Ace bodies. Your Rush animals can trade into them or chip life.</li>
-<li>Do not let him set up a wide 6000-power board that becomes 9000 on defense.</li>
-<li>Race early; his defensive power is high once established.</li>
+  <li>6000-power Luffy/Ace bodies</li>
+  <li>Life early</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear the 6000-power bodies or race before the defensive wall is set.</div>
+<div class="swing"><strong>Swing note:</strong> Clear the 6000-power bodies or race before the defensive wall is set.</div>
+<p><strong>Nasty tricks:</strong> 6000-base bodies become 9000 on defense. High defensive power once established.</p>
 </div>
 
 <div class="matchup">
 <h2>Charlotte Pudding</h2>
+<p><strong>Win condition:</strong> Small Charlottes scale with Linlin. Builds into Life burn and heals.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Linlin arrives and the package comes online.</p>
+<p><strong>Disrupt:</strong> Remove the small Charlottes early if free. Your Rush animals can hit life before the package comes online.</p>
+<p><strong>Your plan:</strong> Clear Charlottes if free. Race life. Do not leave the small ones to scale. Use the draw on K.O. to keep gas.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Pudding builds into Big Mom. Remove the small Charlottes early.</li>
-<li>Your Rush pressure can race before the package comes online.</li>
+  <li>Small Charlottes if free</li>
+  <li>Life</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Kill the small Charlottes. Race life.</div>
-</div>
-
-<div class="matchup">
-<h2>Purple/Yellow Nico Robin</h2>
-<ul class="priority">
-<li>Same as PY Robin. Remove Charlottes, watch for Banish, race before Linlin.</li>
-</ul>
-<div class="swing"><strong>Line:</strong> Clear Charlottes. Race.</div>
+<div class="swing"><strong>Swing note:</strong> Clear Charlottes if free. Race before the package comes online.</div>
+<p><strong>Nasty tricks:</strong> Charlottes scale with Linlin. Heals and Life burn once the package is online.</p>
 </div>
 
 <div class="matchup">
 <h2>Green Shanks</h2>
+<p><strong>Win condition:</strong> Yasopp enables big Shanks. Builds a board of high-power bodies.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Yasopp comes down and enables the big bodies.</p>
+<p><strong>Disrupt:</strong> Yasopp is the enabler — clear him. Big Shanks is the problem. Your Rush animals can chip life while you clear the enabler. Do not let him free-develop the big bodies.</p>
+<p><strong>Your plan:</strong> Clear Yasopp. Race or trade the big Shanks. Use the draw on K.O. to keep gas.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Shanks has big bodies and can rest. Your Rush animals can trade into them or chip life.</li>
-<li>Yasopp is a key enabler — remove him if he appears.</li>
-<li>Do not let him free-develop the big Shanks.</li>
+  <li>Yasopp</li>
+  <li>Big Shanks</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Yasopp and the big bodies. Race life.</div>
+<div class="swing"><strong>Swing note:</strong> Clear Yasopp. Race or trade the big Shanks.</div>
+<p><strong>Nasty tricks:</strong> Yasopp enables the big bodies. High-power board once established.</p>
 </div>
 
 <div class="matchup">
 <h2>Yellow Enel</h2>
+<p><strong>Win condition:</strong> Wants life and triggers. Builds a board that can clear with triggers.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Triggers start clearing the board.</p>
+<p><strong>Disrupt:</strong> Your Rush animals can hit life before he stabilizes. Do not overcommit into a board he can clear with triggers.</p>
+<p><strong>Your plan:</strong> Race life. Watch for triggers. Use the draw on K.O. to keep gas.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Yellow Enel is a different plan from Purple Enel. He wants life and triggers. Your Rush can race him.</li>
-<li>Do not overcommit into a board he can clear with triggers.</li>
+  <li>Life</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Race early. Watch for trigger clears.</div>
+<div class="swing"><strong>Swing note:</strong> Race early. Watch for triggers.</div>
+<p><strong>Nasty tricks:</strong> Triggers can clear the board. Life-based engine.</p>
 </div>
 
 <div class="matchup">
 <h2>Black Yamato</h2>
+<p><strong>Win condition:</strong> Control/midrange. Locks the board with key bodies.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Key control pieces come down.</p>
+<p><strong>Disrupt:</strong> Your Rush animals can trade into them or race life. Do not let her lock the board.</p>
+<p><strong>Your plan:</strong> Clear key bodies or race. Use the draw on K.O. to keep gas.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Yamato is a control/midrange plan. Your Rush animals can pressure before she stabilizes.</li>
-<li>Clear key bodies and keep swinging at life.</li>
+  <li>Key control bodies</li>
+  <li>Life</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Race before she locks the board.</div>
+<div class="swing"><strong>Swing note:</strong> Clear key bodies or race. Do not let her lock the board.</div>
+<p><strong>Nasty tricks:</strong> Control pieces that lock the board. Midrange value.</p>
 </div>
 
 <p class="nav"><a href="../index.html">← Utility Cards</a> <a href="../playbook.html">Bonney</a> <a href="zoro.html">Zoro</a> <a href="brook.html">Brook</a> <a href="franky.html">Franky</a></p>
+
+<div class="modal" id="modal" onclick="closeModal()"><img id="modal-img" src="" alt=""></div>
+<script>
+function openModal(src) { document.getElementById('modal-img').src = src; document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+</script>
 </body>
 </html>

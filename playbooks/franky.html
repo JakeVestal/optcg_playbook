@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Franky Playbook</title>
+<title>Green/Purple Franky Playbook</title>
 <style>
 :root { --bg:#0f1419; --card:#1a2332; --text:#e6edf3; --muted:#8b949e; --accent:#3fb950; --warn:#d29922; --danger:#f85149; --border:#30363d; }
 body { font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); margin:0; padding:16px; max-width:900px; margin:auto; line-height:1.55; }
 h1 { color:#58a6ff; margin:0 0 8px; }
 h2 { color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:4px; margin:28px 0 10px; }
+h3 { color:#58a6ff; margin:14px 0 6px; font-size:1em; }
 .subtitle { color:var(--muted); margin-bottom:16px; }
 .general, .matchup, .note, .swing { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin:12px 0; }
 .note { border-left:3px solid var(--warn); }
@@ -18,162 +19,268 @@ h2 { color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:
 .nav { margin:8px 0 16px; }
 .nav a { color:#58a6ff; margin-right:12px; text-decoration:none; }
 .nav a:hover { text-decoration:underline; }
+.card-row { display:flex; gap:10px; flex-wrap:wrap; margin:10px 0; }
+.card-row img { width:90px; height:auto; border-radius:6px; cursor:pointer; border:1px solid #444; }
+.card-row img:hover { opacity:0.85; }
+.label { font-size:0.75em; color:var(--muted); text-align:center; margin-top:2px; }
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center; }
+.modal.open { display:flex; }
+.modal img { max-width:90%; max-height:90%; border-radius:8px; }
 </style>
 </head>
 <body>
-<h1>Franky Playbook (OP18-021)</h1>
-<p class="subtitle">Green/Purple Stage toolbox. Advice for when you are playing Franky against each matchup.</p>
+<h1>Green/Purple Franky Playbook (OP18-021)</h1>
+<p class="subtitle">Stage midrange. Advice for when you are playing Franky against each matchup.</p>
 <p class="nav"><a href="../index.html">← Utility Cards</a> <a href="../playbook.html">Bonney</a> <a href="zoro.html">Zoro</a> <a href="brook.html">Brook</a> <a href="karoo.html">Karoo</a></p>
 
 <div class="general">
-<strong>Your plan:</strong> DON!! −1 once per turn to play a Stage ≤5 from hand. Extra Stages stay in hand as +3000 counters. Use Stage effects (Mini-Merry draw + rested DON, Shark Submerge defense, etc.) while building Water Seven bodies (6c Franky, big Luffys). Stages are both free plays and counters — use that flexibility.
+<strong>Your plan:</strong> All Stage cards in your hand have +3000 Counter. Once per turn, spend 1 DON!! to play up to 1 Stage card with a cost of 5 or less from your hand. The engine is using Stages for both board presence (free play) and counter density. Play Stages to enable your game plan while having extra counters in hand. Use green/purple tools to control the board while the Stages give you the defensive buffer to survive long enough to win.
 </div>
 
 <div class="matchup">
 <h2>Black Imu</h2>
+<div class="card-row">
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP13-079" onclick="openModal(this.src)"><div class="label">OP13-079 Imu</div></div>
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP13-082" onclick="openModal(this.src)"><div class="label">OP13-082 Five Elders</div></div>
+</div>
+<p><strong>Win condition:</strong> Flood with Celestial Dragons, then OP13-082 trashes the board and replays up to five 5000-power Elders from trash. Once trash ≥7 most Elders cannot be removed by effects.</p>
+<p><strong>Effect KO:</strong> No. Your tools are Stages and battle, not effect KO.</p>
+<p><strong>Key turn:</strong> OP13-082 hits. Stages give you counters while you race or clear.</p>
+<p><strong>Disrupt:</strong> Stages give you +3000 counters while you clear the value Elders or race life. Do not leave two high-value targets if Rayleigh is in hand. Empty Throne cannot be destroyed by green — ignore it.</p>
+<p><strong>Your plan:</strong> Race early life. Use Stages for counters while you clear rested Elders. Do not overcommit into a board you cannot clear.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Elders are sticky. Your Stages give you counters and value while you build a body that can trade or race.</li>
-<li>Do not let Imu free-develop a wide Elder board before you stabilize.</li>
-<li>Empty Throne cannot be destroyed by green. Ignore it.</li>
+  <li>Value Elders and blockers</li>
+  <li>OP13-082 when it appears</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Drop Stages for value/counters, then a body to clear an Elder or race life.</div>
+<div class="swing"><strong>Swing note:</strong> Use Stages for counters while you clear Elders or race. Empty Throne cannot be destroyed by green — ignore it.</div>
+<p><strong>Nasty tricks:</strong> Starts with The Empty Throne free. Plays Five Elders for 3 DON!! via the Stage. OP13-082 trashes the whole board and plays up to 5 different Elders from trash.</p>
 </div>
 
 <div class="matchup">
 <h2>Purple Enel</h2>
+<div class="card-row">
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP15-058" onclick="openModal(this.src)"><div class="label">OP15-058 Enel</div></div>
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP15-118" onclick="openModal(this.src)"><div class="label">6-cost Enel</div></div>
+</div>
+<p><strong>Win condition:</strong> 6-DON!! deck. Leader dumps 5 DON!! at once and attaches 4 rested DON!! to a cheap body for 10k–14k swings. Closes with sticky 6-cost Enel.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Leader ability goes off and a 1-cost or the 6-cost Enel receives the 4 DON!!.</p>
+<p><strong>Disrupt:</strong> Stages give you +3000 counters while you clear the pumped body or 6c Enel. Do not leave a 10k+ attacker active. Charlottes can scale later — remove the small ones if free, but life is usually higher priority.</p>
+<p><strong>Your plan:</strong> Take life early. Use Stages for counters while you clear the 6c Enel or race. Do not let Enel reach a comfortable 6+ DON!! turn with multiple big bodies.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Rest or clear the 6c Enel so it cannot grow. Your green rest effects can help.</li>
-<li>Stages give you counters while you build a body that can trade the big Enel or race life.</li>
-<li>Charlottes can scale — remove the small ones if free.</li>
+  <li>The Character that just received the 4 DON!!</li>
+  <li>OP15-060 / OP15-118 Enel</li>
+  <li>Ohm, Shura</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Use Stages for counters, clear the big Enel, then race or stabilize.</div>
+<div class="swing"><strong>Swing note:</strong> Use Stages for counters while you clear the pumped body or 6c Enel. The 6c Enel is sticky but still dies to a battle.</div>
+<p><strong>Nasty tricks:</strong> DON!! deck is only 6 cards. Leader adds 1 active + 4 rested and attaches the 4 to one Character for massive swings. 6-cost Enel is sticky.</p>
 </div>
 
 <div class="matchup">
 <h2>Rocks D. Xebec</h2>
+<div class="card-row">
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-039" onclick="openModal(this.src)"><div class="label">OP17-039 Rocks</div></div>
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-054" onclick="openModal(this.src)"><div class="label">Stussy</div></div>
+  <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-040" onclick="openModal(this.src)"><div class="label">Newgate</div></div>
+</div>
+<p><strong>Win condition:</strong> Builds with Stussy / Newgate / Shiki / Captain John, then OP17-118 plays two Rocks Pirates for a free board. Captain John forces all attacks onto him when rested.</p>
+<p><strong>Effect KO:</strong> Limited. Stussy locks attackers.</p>
+<p><strong>Key turn:</strong> 10-cost Rocks hits, or when Captain John rests.</p>
+<p><strong>Disrupt:</strong> Do not let Rocks build. Stages give you +3000 counters while you clear Stussy, Newgate, or John (must attack John if rested). Clear his threats or race before he snowballs.</p>
+<p><strong>Your plan:</strong> Keep pressure so he cannot freely develop. Use Stages for counters while you clear key bodies. Having your own midrange bodies is critical for trading.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Do not let Rocks build. Prioritize Stussy, Newgate, and Captain John (must attack John if rested).</li>
-<li>Stages give you counters and value while you clear his key bodies.</li>
-<li>Big bodies are the problem — do not let him free-develop Newgate/Stussy.</li>
+  <li>Stussy</li>
+  <li>Newgate</li>
+  <li>Captain John (must attack if rested)</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Newgate/Stussy/John. Use Stages for counters while you race or trade.</div>
+<div class="swing"><strong>Swing note:</strong> Against a rested Captain John you have no choice — everything must attack him. Use Stages for counters while you clear threats or race.</div>
+<p><strong>Nasty tricks:</strong> OP17-118 plays two Rocks Pirates for free. Captain John forces all attacks onto him when rested. Stussy locks attackers.</p>
 </div>
 
 <div class="matchup">
 <h2>Purple/Yellow Robin</h2>
+<p><strong>Win condition:</strong> Leader attacks to Banish and ramp. Accelerates into the Big Mom / Charlotte package for Life burn and heals.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> She ramps, then drops a high-cost Charlotte.</p>
+<p><strong>Disrupt:</strong> Stages give you +3000 counters while you clear small Charlottes before Linlin or race life. Banish is a problem — do not leave rested bodies she can punish. Do not leave Smoothie or Perospero active.</p>
+<p><strong>Your plan:</strong> Race while the board is thin. Use Stages for counters. Clear Charlottes if free. Race before Linlin arrives.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Remove the small Charlottes before Linlin. Your rest effects can help.</li>
-<li>Banish is a problem — do not leave rested bodies she can punish.</li>
-<li>Stages give you counters while you race before Linlin arrives.</li>
+  <li>Small Charlottes before Linlin</li>
+  <li>Smoothie, Perospero</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Charlottes. Use Stages for counters and race life.</div>
+<div class="swing"><strong>Swing note:</strong> Use Stages for counters while you clear Charlottes or race. Do not leave rested bodies for Banish.</div>
+<p><strong>Nasty tricks:</strong> Banish on Leader attack. Charlottes scale with Linlin. Heals and Life burn.</p>
 </div>
 
 <div class="matchup">
 <h2>Portgas D. Ace</h2>
+<p><strong>Win condition:</strong> Early Rush attackers. Builds a board of Whitebeard Pirates that can attack immediately.</p>
+<p><strong>Effect KO:</strong> Limited. Marco’s On-KO is annoying.</p>
+<p><strong>Key turn:</strong> Early Rush bodies come down.</p>
+<p><strong>Disrupt:</strong> Stages give you +3000 counters while you clear the early Rush threats. Do not let him free-swing into your life. Garp is mostly a small body — ignore unless the board is empty.</p>
+<p><strong>Your plan:</strong> Use Stages for counters while you clear the early attackers. Do not overcommit into a board Marco can rebuild.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Ace has early Rush. Stages in hand are +3000 counters — use them to survive the early swings.</li>
-<li>Garp is mostly a small body — ignore unless needed.</li>
-<li>Marco’s On-KO is annoying. Do not overcommit into a board he can rebuild.</li>
+  <li>Early Rush attackers</li>
+  <li>Marco (On-KO)</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Use Stage counters to survive early Rush, then clear or race with your bodies.</div>
+<div class="swing"><strong>Swing note:</strong> Use Stages for counters while you clear early Rush threats. Garp is usually not worth the attack.</div>
+<p><strong>Nasty tricks:</strong> Early Rush. Marco rebuilds on KO. Garp is mostly a small body with an on-play.</p>
 </div>
 
 <div class="matchup">
 <h2>Red/Black Sabo</h2>
+<p><strong>Win condition:</strong> Rests Straw Hats and powers up with Loki. Builds a board of big bodies.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Loki comes down and powers the board.</p>
+<p><strong>Disrupt:</strong> Stages give you +3000 counters while you clear Loki or race. Your Leader is not Straw Hat, so his rest is less relevant. Carrot is weak against high-cost giants. If he has big bodies, focus life or the enablers.</p>
+<p><strong>Your plan:</strong> Clear Loki. Use Stages for counters while you race or trade the big bodies.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Sabo rests Straw Hats. Your Leader is Straw Hat, so be careful.</li>
-<li>Loki is the engine — clear him.</li>
-<li>Carrot is weak against high-cost giants. If he has big bodies, focus life or Loki.</li>
+  <li>Loki</li>
+  <li>Key enablers</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Loki. Use Stages for counters. Watch for Straw Hat rest.</div>
+<div class="swing"><strong>Swing note:</strong> Clear Loki. Use Stages for counters while you race or trade.</div>
+<p><strong>Nasty tricks:</strong> Rests Straw Hats (less relevant for you). Loki powers the board. Carrot is weak against high-cost bodies.</p>
 </div>
 
 <div class="matchup">
 <h2>Purple Kaido</h2>
+<p><strong>Win condition:</strong> Ramps DON!! and plays big dragons. King is nearly unkillable by normal means.</p>
+<p><strong>Effect KO:</strong> No. King is effectively unkillable by normal means.</p>
+<p><strong>Key turn:</strong> Big dragons come down after the ramp.</p>
+<p><strong>Disrupt:</strong> Ignore King. Stages give you +3000 counters while you race or clear the attackers that can hit you. Race before the package comes fully online.</p>
+<p><strong>Your plan:</strong> Race life. Use Stages for counters. Clear the attackers that can hit you. Do not waste resources on King.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>King is nearly unkillable by normal means — ignore him and race.</li>
-<li>Stages give you counters while you clear the other dragons or race life.</li>
-<li>Do not let him free-develop the dragon package.</li>
+  <li>Attackers that can hit you</li>
+  <li>Ignore King</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Ignore King. Use Stages for counters and clear other dragons or race.</div>
+<div class="swing"><strong>Swing note:</strong> Ignore King. Use Stages for counters while you race the Leader before the dragon package comes online.</div>
+<p><strong>Nasty tricks:</strong> King returns or is effectively unkillable. Big dragons after ramp.</p>
 </div>
 
 <div class="matchup">
 <h2>Blue/Yellow Boa Hancock</h2>
+<p><strong>Win condition:</strong> Rests and manipulates DON!!. Builds a board that controls your attacks.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> She rests key bodies or manipulates DON!! to lock the board.</p>
+<p><strong>Disrupt:</strong> Stages give you +3000 counters while you clear her key bodies (especially DON!! enablers) or race life. You do not need heavy DON!! disruption; the Stages give you the defensive buffer.</p>
+<p><strong>Your plan:</strong> Clear enablers. Use Stages for counters while you race. Keep the pressure up.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Boa rests and manipulates DON!!. Your rest effects can answer her bodies.</li>
-<li>Stages give you counters while you clear her enablers or race life.</li>
-<li>You do not need heavy DON!! disruption; your combat and Stage value are the answer.</li>
+  <li>DON!! enablers</li>
+  <li>Life</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear her key bodies. Use Stages for counters and race or stabilize.</div>
+<div class="swing"><strong>Swing note:</strong> Clear enablers. Use Stages for counters while you race life.</div>
+<p><strong>Nasty tricks:</strong> Rests and manipulates DON!!. Can lock the board if you let her set up.</p>
 </div>
 
 <div class="matchup">
 <h2>Black Elbaph Luffy</h2>
+<p><strong>Win condition:</strong> Builds giants with Loki as the engine.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Loki comes down and powers the giant board.</p>
+<p><strong>Disrupt:</strong> Stages give you +3000 counters while you clear Loki or race. Do not let him free-develop a wide giant board.</p>
+<p><strong>Your plan:</strong> Clear Loki. Use Stages for counters while you race or trade the giants before they snowball.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Loki is the engine — clear him.</li>
-<li>Giants are big. Stages give you counters while you trade or race.</li>
-<li>Do not let him free-develop a wide giant board.</li>
+  <li>Loki</li>
+  <li>Key giants</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Loki. Use Stages for counters and trade or race the giants.</div>
+<div class="swing"><strong>Swing note:</strong> Clear Loki. Use Stages for counters while you race or trade the giants.</div>
+<p><strong>Nasty tricks:</strong> Loki powers the board. Giants scale quickly once established.</p>
 </div>
 
 <div class="matchup">
 <h2>Luffy & Ace / Red-Green Luffy</h2>
+<p><strong>Win condition:</strong> Wants 6000-base Luffy/Ace bodies that become 9000 on defense.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Wide 6000-power board is established.</p>
+<p><strong>Disrupt:</strong> Stages give you +3000 counters while you clear the 6000-power bodies or race life. Do not let him set up the defensive wall.</p>
+<p><strong>Your plan:</strong> Race early. Use Stages for counters while you clear the 6000-power bodies before they become 9000 walls.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>L&A wants 6000-base bodies. Stages give you counters while you clear them or race life.</li>
-<li>Do not let him set up a wide 6000-power board that becomes 9000 on defense.</li>
-<li>Race early.</li>
+  <li>6000-power Luffy/Ace bodies</li>
+  <li>Life early</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear the 6000-power bodies or race. Use Stages for counters.</div>
+<div class="swing"><strong>Swing note:</strong> Clear the 6000-power bodies or race. Use Stages for counters.</div>
+<p><strong>Nasty tricks:</strong> 6000-base bodies become 9000 on defense. High defensive power once established.</p>
 </div>
 
 <div class="matchup">
 <h2>Charlotte Pudding</h2>
+<p><strong>Win condition:</strong> Small Charlottes scale with Linlin. Builds into Life burn and heals.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Linlin arrives and the package comes online.</p>
+<p><strong>Disrupt:</strong> Stages give you +3000 counters while you clear small Charlottes early or race life. Do not leave the small ones to scale.</p>
+<p><strong>Your plan:</strong> Clear Charlottes if free. Use Stages for counters while you race before the package comes online.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Remove the small Charlottes early.</li>
-<li>Stages give you counters while you race before the package comes online.</li>
+  <li>Small Charlottes if free</li>
+  <li>Life</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Charlottes. Use Stages for counters and race life.</div>
-</div>
-
-<div class="matchup">
-<h2>Purple/Yellow Nico Robin</h2>
-<ul class="priority">
-<li>Same as PY Robin. Clear Charlottes, watch for Banish, use Stages for counters and race.</li>
-</ul>
-<div class="swing"><strong>Line:</strong> Clear Charlottes. Race with Stage support.</div>
+<div class="swing"><strong>Swing note:</strong> Clear Charlottes if free. Use Stages for counters while you race.</div>
+<p><strong>Nasty tricks:</strong> Charlottes scale with Linlin. Heals and Life burn once the package is online.</p>
 </div>
 
 <div class="matchup">
 <h2>Green Shanks</h2>
+<p><strong>Win condition:</strong> Yasopp enables big Shanks. Builds a board of high-power bodies.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Yasopp comes down and enables the big bodies.</p>
+<p><strong>Disrupt:</strong> Yasopp is the enabler — clear him. Stages give you +3000 counters while you race or trade the big Shanks. Do not let him free-develop the big bodies.</p>
+<p><strong>Your plan:</strong> Clear Yasopp. Use Stages for counters while you race or trade the big Shanks.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Yasopp is the enabler — clear him.</li>
-<li>Big Shanks is the problem. Stages give you counters while you trade or race.</li>
-<li>Do not let him free-develop the big bodies.</li>
+  <li>Yasopp</li>
+  <li>Big Shanks</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear Yasopp. Use Stages for counters and trade or race the big Shanks.</div>
+<div class="swing"><strong>Swing note:</strong> Clear Yasopp. Use Stages for counters while you race or trade the big Shanks.</div>
+<p><strong>Nasty tricks:</strong> Yasopp enables the big bodies. High-power board once established.</p>
 </div>
 
 <div class="matchup">
 <h2>Yellow Enel</h2>
+<p><strong>Win condition:</strong> Wants life and triggers. Builds a board that can clear with triggers.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Triggers start clearing the board.</p>
+<p><strong>Disrupt:</strong> Stages give you +3000 counters while you race. Do not overcommit into a board he can clear with triggers.</p>
+<p><strong>Your plan:</strong> Race life. Use Stages for counters. Watch for triggers.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Yellow Enel wants life and triggers. Stages give you counters while you race him.</li>
-<li>Do not overcommit into a board he can clear with triggers.</li>
+  <li>Life</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Race with Stage counters. Watch for triggers.</div>
+<div class="swing"><strong>Swing note:</strong> Race with Stage counters. Watch for triggers.</div>
+<p><strong>Nasty tricks:</strong> Triggers can clear the board. Life-based engine.</p>
 </div>
 
 <div class="matchup">
 <h2>Black Yamato</h2>
+<p><strong>Win condition:</strong> Control/midrange. Locks the board with key bodies.</p>
+<p><strong>Effect KO:</strong> No.</p>
+<p><strong>Key turn:</strong> Key control pieces come down.</p>
+<p><strong>Disrupt:</strong> Stages give you +3000 counters while you clear her key bodies or race. Do not let her lock the board.</p>
+<p><strong>Your plan:</strong> Clear key bodies or race. Use Stages for counters and value.</p>
+<h3>Priority targets</h3>
 <ul class="priority">
-<li>Yamato is control/midrange. Stages give you counters while you clear her key bodies or race.</li>
-<li>Do not let her lock the board.</li>
+  <li>Key control bodies</li>
+  <li>Life</li>
 </ul>
-<div class="swing"><strong>Line:</strong> Clear key bodies or race. Use Stages for counters and value.</div>
+<div class="swing"><strong>Swing note:</strong> Clear key bodies or race. Use Stages for counters and value.</div>
+<p><strong>Nasty tricks:</strong> Control pieces that lock the board. Midrange value.</p>
 </div>
 
 <p class="nav"><a href="../index.html">← Utility Cards</a> <a href="../playbook.html">Bonney</a> <a href="zoro.html">Zoro</a> <a href="brook.html">Brook</a> <a href="karoo.html">Karoo</a></p>
+
+<div class="modal" id="modal" onclick="closeModal()"><img id="modal-img" src="" alt=""></div>
+<script>
+function openModal(src) { document.getElementById('modal-img').src = src; document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+</script>
 </body>
 </html>
