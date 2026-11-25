@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Pull latest cards from optcgjson and write data/cards.csv with utility tags."""
-import json, csv, urllib.request, os, re
+import json, csv, urllib.request, os, re, hashlib, subprocess, datetime
 from pathlib import Path
 
 OUTPUT_URL = "https://raw.githubusercontent.com/hugoprudente/optcgjson/main/output/"
@@ -50,6 +50,66 @@ def extract_tags(effect, counter, category):
     if category and category.upper() == "LEADER":
         t.add("LEADER")
     return ",".join(sorted(t))
+
+
+RULES_PAGE = "https://en.onepiece-cardgame.com/rules/"
+RULES_DIR = Path("data/rules")
+RULES_TXT = RULES_DIR / "comprehensive_rules.txt"
+RULES_PDF = RULES_DIR / "comprehensive_rules.pdf"
+RULES_LOG = RULES_DIR / "rule-changes-log.txt"
+
+def find_comprehensive_pdf_url():
+    """Scrape the official rules page for the current Comprehensive Rules PDF link."""
+    req = urllib.request.Request(RULES_PAGE, headers={"User-Agent": "optcg-playbook-bot/1.0"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        html = r.read().decode("utf-8", errors="replace")
+    # Look for the comprehensive rules PDF
+    m = re.search(r'href="([^"]*rule_comprehensive\.pdf[^"]*)"', html)
+    if m:
+        url = m.group(1)
+        if url.startswith("/"):
+            url = "https://en.onepiece-cardgame.com" + url
+        return url
+    # Fallback to the known base
+    return "https://en.onepiece-cardgame.com/pdf/rule_comprehensive.pdf"
+
+def pdf_to_text(pdf_path):
+    """Convert PDF to text using pdftotext (poppler)."""
+    result = subprocess.run(
+        ["pdftotext", "-layout", "-enc", "UTF-8", str(pdf_path), "-"],
+        capture_output=True, text=True, timeout=60
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"pdftotext failed: {result.stderr}")
+    return result.stdout
+
+def update_rules():
+    """Download latest Comprehensive Rules, convert to text, log if changed."""
+    RULES_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        pdf_url = find_comprehensive_pdf_url()
+        print(f"Rules PDF URL: {pdf_url}")
+        req = urllib.request.Request(pdf_url, headers={"User-Agent": "optcg-playbook-bot/1.0"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            pdf_bytes = r.read()
+        # Write PDF
+        RULES_PDF.write_bytes(pdf_bytes)
+        # Convert to text
+        text = pdf_to_text(RULES_PDF)
+        new_hash = hashlib.sha256(text.encode()).hexdigest()[:12]
+        old_text = RULES_TXT.read_text(encoding="utf-8") if RULES_TXT.exists() else ""
+        old_hash = hashlib.sha256(old_text.encode()).hexdigest()[:12] if old_text else "none"
+        if text != old_text:
+            RULES_TXT.write_text(text, encoding="utf-8")
+            now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+            log_entry = f"[{now}] Rules updated. old={old_hash} new={new_hash} url={pdf_url}\n"
+            with open(RULES_LOG, "a", encoding="utf-8") as f:
+                f.write(log_entry)
+            print(f"Rules changed: {old_hash} -> {new_hash}")
+        else:
+            print("Rules unchanged")
+    except Exception as e:
+        print(f"Rules update failed: {e}")
 
 def main():
     os.makedirs("data", exist_ok=True)
@@ -107,6 +167,7 @@ def main():
                 types
             ])
     print(f"Wrote {len(by_id)} cards to data/cards.csv")
+    update_rules()
 
 if __name__ == "__main__":
     main()

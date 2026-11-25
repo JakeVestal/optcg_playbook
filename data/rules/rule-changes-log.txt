@@ -1,0 +1,2 @@
+# Rule changes log
+[2026-11-25 18:39 UTC] Rules updated. old=none new=51fe22cb864f url=https://en.onepiece-cardgame.com/pdf/rule_comprehensive.pdf?20260828
