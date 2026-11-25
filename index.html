@@ -112,7 +112,7 @@ button.secondary { background: #2a3650; }
 </p>
 
 <div class="toolbar">
-  <input id="search" type="text" placeholder="Search ID, name, or text..." oninput="render()">
+  <input id="search" type="text" placeholder="Search ID, name, or text..." oninput="render(); refreshTypesList()">
   <button class="secondary" onclick="clearSearch()">Clear</button>
 </div>
 
@@ -191,7 +191,7 @@ button.secondary { background: #2a3650; }
   <div id="cards"></div>
 
   <div class="panel" id="types-panel">
-    <h3>Types in View</h3>
+    <h3>Types in Selection</h3>
     <div id="types-list"></div>
   </div>
 </div>
@@ -208,6 +208,7 @@ let activeBlocks = new Set();
 let activeColors = new Set();
 let activeCats = new Set();
 let activeTags = new Set();
+let activeTypes = new Set();
 let sortKey = '';
 
 async function load() {
@@ -222,6 +223,7 @@ async function load() {
   });
   allCards = Object.values(byBase);
   render();
+  refreshTypesList();
 }
 
 function parseCSVLine(line) {
@@ -260,6 +262,10 @@ function visibleCards() {
       return tags.includes(t);
     })) return false;
     if (search && !(c.id + c.name + c.effect).toLowerCase().includes(search)) return false;
+    if (activeTypes.size) {
+      const cardTypes = (c.types || '').split('|').filter(Boolean);
+      if (!cardTypes.some(t => activeTypes.has(t))) return false;
+    }
     return true;
   });
 }
@@ -304,12 +310,13 @@ function render() {
   });
   renderSetAside();
   renderDeck();
-  renderTypes(cards);
+  // types list updated only from refreshTypesList()
 }
 
 function setAsideCard(id) {
   setAside.add(id);
   render();
+  refreshTypesList();
 }
 function restoreCard(id) {
   setAside.delete(id);
@@ -343,7 +350,8 @@ function copyDeck() {
   navigator.clipboard.writeText(text).then(() => alert('Copied ' + deck.length + ' unique cards'));
 }
 
-function renderTypes(cards) {
+function refreshTypesList() {
+  const cards = visibleCardsWithoutTypeFilter();
   const counts = {};
   cards.forEach(c => {
     (c.types || '').split('|').filter(Boolean).forEach(t => {
@@ -351,20 +359,63 @@ function renderTypes(cards) {
     });
   });
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  document.getElementById('types-list').innerHTML = sorted.slice(0, 40).map(([t, n]) =>
-    `<div class="type-row"><span>${t}</span><span class="type-count">${n}</span></div>`
-  ).join('') || '<div style="color:var(--muted);">None</div>';
+  document.getElementById('types-list').innerHTML = sorted.slice(0, 40).map(([t, n]) => {
+    const checked = activeTypes.has(t) ? 'checked' : '';
+    const active = activeTypes.has(t) ? ' style="background:#2a3a2a; border-color:#3fb950;"' : '';
+    return `<div class="type-row"${active} onclick="toggleType('${t.replace(/'/g, "\\'")}')"><span>${t}</span><span class="type-count">${n}</span></div>`;
+  }).join('') || '<div style="color:var(--muted);">None</div>';
 }
 
-function toggleBlock(btn, b) { btn.classList.toggle('active'); if (activeBlocks.has(b)) activeBlocks.delete(b); else activeBlocks.add(b); render(); }
-function toggleColor(btn, c) { btn.classList.toggle('active'); if (activeColors.has(c)) activeColors.delete(c); else activeColors.add(c); render(); }
-function toggleCat(btn, c) { btn.classList.toggle('active'); if (activeCats.has(c)) activeCats.delete(c); else activeCats.add(c); render(); }
-function toggleTag(btn, t) { btn.classList.toggle('active'); if (activeTags.has(t)) activeTags.delete(t); else activeTags.add(t); render(); }
-function clearBlocks() { activeBlocks.clear(); document.querySelectorAll('#block-filter button').forEach(b => b.classList.remove('active')); render(); }
-function clearColors() { activeColors.clear(); document.querySelectorAll('#color-filter button').forEach(b => b.classList.remove('active')); render(); }
-function clearCats() { activeCats.clear(); document.querySelectorAll('#cat-filter button').forEach(b => b.classList.remove('active')); render(); }
-function clearTags() { activeTags.clear(); document.querySelectorAll('#tag-filter button').forEach(b => b.classList.remove('active')); render(); }
-function clearSearch() { document.getElementById('search').value = ''; render(); }
+function visibleCardsWithoutTypeFilter() {
+  const search = document.getElementById('search').value.toLowerCase();
+  return allCards.filter(c => {
+    if (setAside.has(c.id)) return false;
+    if (activeBlocks.size && !activeBlocks.has(c.blockIcon)) return false;
+    const colors = (c.colors || '').split('|');
+    if (activeColors.size && !colors.some(col => activeColors.has(col))) return false;
+    if (activeCats.size && !activeCats.has((c.category || '').toUpperCase())) return false;
+    const tags = (c.tags || '').split(',').filter(Boolean);
+    const eff = (c.effect || '').toLowerCase();
+    if (activeTags.size && ![...activeTags].every(t => {
+      if (t === 'ON_KO') return eff.includes('on k.o.');
+      if (t === 'ADD_DON') return eff.includes('don!! deck') && (eff.includes('add') || eff.includes('set it as active'));
+      if (t === 'ADD_LIFE') return eff.includes('life cards') && eff.includes('add');
+      return tags.includes(t);
+    })) return false;
+    if (search && !(c.id + c.name + c.effect).toLowerCase().includes(search)) return false;
+    return true;
+  });
+}
+
+function toggleType(t) {
+  if (activeTypes.has(t)) activeTypes.delete(t);
+  else activeTypes.add(t);
+  render(); // cards update, types list stays
+  // re-highlight the row without rebuilding the list
+  const rows = document.querySelectorAll('#types-list .type-row');
+  rows.forEach(row => {
+    const name = row.querySelector('span')?.textContent;
+    if (name === t) {
+      if (activeTypes.has(t)) {
+        row.style.background = '#2a3a2a';
+        row.style.borderColor = '#3fb950';
+      } else {
+        row.style.background = '';
+        row.style.borderColor = '';
+      }
+    }
+  });
+}
+
+function toggleBlock(btn, b) { btn.classList.toggle('active'); if (activeBlocks.has(b)) activeBlocks.delete(b); else activeBlocks.add(b); render(); refreshTypesList(); }
+function toggleColor(btn, c) { btn.classList.toggle('active'); if (activeColors.has(c)) activeColors.delete(c); else activeColors.add(c); render(); refreshTypesList(); }
+function toggleCat(btn, c) { btn.classList.toggle('active'); if (activeCats.has(c)) activeCats.delete(c); else activeCats.add(c); render(); refreshTypesList(); }
+function toggleTag(btn, t) { btn.classList.toggle('active'); if (activeTags.has(t)) activeTags.delete(t); else activeTags.add(t); render(); refreshTypesList(); }
+function clearBlocks() { activeBlocks.clear(); document.querySelectorAll('#block-filter button').forEach(b => b.classList.remove('active')); render(); refreshTypesList(); }
+function clearColors() { activeColors.clear(); document.querySelectorAll('#color-filter button').forEach(b => b.classList.remove('active')); render(); refreshTypesList(); }
+function clearCats() { activeCats.clear(); document.querySelectorAll('#cat-filter button').forEach(b => b.classList.remove('active')); render(); refreshTypesList(); }
+function clearTags() { activeTags.clear(); document.querySelectorAll('#tag-filter button').forEach(b => b.classList.remove('active')); render(); refreshTypesList(); }
+function clearSearch() { document.getElementById('search').value = ''; render(); refreshTypesList(); }
 function setSort(k) { sortKey = k; render(); }
 function openModal(src) { document.getElementById('modal-img').src = src; document.getElementById('modal').classList.add('open'); }
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
@@ -381,6 +432,7 @@ function collectState() {
     activeColors: [...activeColors],
     activeCats: [...activeCats],
     activeTags: [...activeTags],
+    activeTypes: [...activeTypes],
     sortKey,
     search: document.getElementById('search')?.value || ''
   };
@@ -394,6 +446,7 @@ function applyState(s) {
   activeColors = new Set(s.activeColors || []);
   activeCats = new Set(s.activeCats || []);
   activeTags = new Set(s.activeTags || []);
+  activeTypes = new Set(s.activeTypes || []);
   sortKey = s.sortKey || '';
   if (document.getElementById('search')) document.getElementById('search').value = s.search || '';
   // refresh button active classes
@@ -402,6 +455,7 @@ function applyState(s) {
   document.querySelectorAll('#cat-filter button').forEach(b => b.classList.toggle('active', activeCats.has(b.textContent.trim())));
   document.querySelectorAll('#tag-filter button').forEach(b => b.classList.toggle('active', activeTags.has(b.textContent.trim())));
   render();
+  refreshTypesList();
 }
 
 async function saveState() {
