@@ -144,10 +144,10 @@ button.secondary { background: #2a3650; }
 </div>
 
 <div class="toolbar" id="cat-filter">
-  <button onclick="toggleCat(this,'LEADER')">Leaders</button>
-  <button onclick="toggleCat(this,'CHARACTER')">Characters</button>
-  <button onclick="toggleCat(this,'EVENT')">Events</button>
-  <button onclick="toggleCat(this,'STAGE')">Stages</button>
+  <button onclick="toggleCat(this,'LEADER')" data-value="LEADER">Leaders</button>
+  <button onclick="toggleCat(this,'CHARACTER')" data-value="CHARACTER">Characters</button>
+  <button onclick="toggleCat(this,'EVENT')" data-value="EVENT">Events</button>
+  <button onclick="toggleCat(this,'STAGE')" data-value="STAGE">Stages</button>
   <button class="secondary" onclick="clearCats()">All Types</button>
 </div>
 
@@ -161,11 +161,11 @@ button.secondary { background: #2a3650; }
   <button onclick="toggleTag(this,'RUSH')">RUSH</button>
   <button onclick="toggleTag(this,'UNBLOCKABLE')">UNBLOCKABLE</button>
   <button onclick="toggleTag(this,'DOUBLE_ATTACK')">DOUBLE_ATTACK</button>
-  <button onclick="toggleTag(this,'ON_KO')">ON K.O.</button>
-  <button onclick="toggleTag(this,'ADD_DON')">Add DON!!</button>
-  <button onclick="toggleTag(this,'ADD_LIFE')">Add Life</button>
-  <button onclick="toggleTag(this,'COUNTER2000')">+2000</button>
-  <button onclick="toggleTag(this,'COUNTER1000')">+1000</button>
+  <button onclick="toggleTag(this,'ON_KO')" data-value="ON_KO">ON K.O.</button>
+  <button onclick="toggleTag(this,'ADD_DON')" data-value="ADD_DON">Add DON!!</button>
+  <button onclick="toggleTag(this,'ADD_LIFE')" data-value="ADD_LIFE">Add Life</button>
+  <button onclick="toggleTag(this,'COUNTER2000')" data-value="COUNTER2000">+2000</button>
+  <button onclick="toggleTag(this,'COUNTER1000')" data-value="COUNTER1000">+1000</button>
   <button class="secondary" onclick="clearTags()">Clear Tags</button>
 </div>
 
@@ -456,7 +456,6 @@ function collectState() {
     activeColors: [...activeColors],
     activeCats: [...activeCats],
     activeTags: [...activeTags],
-    activeTypes: [...activeTypes],
     sortKey,
     search: document.getElementById('search')?.value || ''
   };
@@ -470,14 +469,21 @@ function applyState(s) {
   activeColors = new Set(s.activeColors || []);
   activeCats = new Set(s.activeCats || []);
   activeTags = new Set(s.activeTags || []);
-  activeTypes = new Set(s.activeTypes || []);
+  // intentionally do not restore activeTypes — types list is rebuilt from other filters
+  activeTypes = new Set();
   sortKey = s.sortKey || '';
   if (document.getElementById('search')) document.getElementById('search').value = s.search || '';
-  // refresh button active classes
-  document.querySelectorAll('#block-filter button').forEach(b => b.classList.toggle('active', activeBlocks.has(b.textContent.trim())));
-  document.querySelectorAll('#color-filter button').forEach(b => b.classList.toggle('active', activeColors.has(b.textContent.trim())));
-  document.querySelectorAll('#cat-filter button').forEach(b => b.classList.toggle('active', activeCats.has(b.textContent.trim())));
-  document.querySelectorAll('#tag-filter button').forEach(b => b.classList.toggle('active', activeTags.has(b.textContent.trim())));
+
+  function isActive(btn, set) {
+    const val = btn.dataset.value || btn.textContent.trim();
+    return set.has(val);
+  }
+
+  document.querySelectorAll('#block-filter button:not(.secondary)').forEach(b => b.classList.toggle('active', isActive(b, activeBlocks)));
+  document.querySelectorAll('#color-filter button:not(.secondary)').forEach(b => b.classList.toggle('active', isActive(b, activeColors)));
+  document.querySelectorAll('#cat-filter button:not(.secondary)').forEach(b => b.classList.toggle('active', isActive(b, activeCats)));
+  document.querySelectorAll('#tag-filter button:not(.secondary)').forEach(b => b.classList.toggle('active', isActive(b, activeTags)));
+
   render();
   refreshTypesList();
 }
