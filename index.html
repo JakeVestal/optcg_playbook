@@ -184,6 +184,7 @@ button.secondary { background: #2a3650; }
       <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
         <button class="secondary" onclick="saveState()">Save State</button>
         <button class="secondary" onclick="loadState()">Load State</button>
+        <button class="secondary" onclick="viewAltArts()">View Alt Art</button>
       </div>
     </div>
   </div>
@@ -198,6 +199,16 @@ button.secondary { background: #2a3650; }
 
 <div class="modal" id="modal" onclick="closeModal()">
   <img id="modal-img" src="" alt="">
+</div>
+
+<div class="modal" id="alt-modal" onclick="closeAltModal()" style="overflow-y:auto; align-items:flex-start; padding-top:40px;">
+  <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; max-width:900px; width:90%;" onclick="event.stopPropagation()">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3 style="margin:0; color:var(--accent);">Alt Arts in Deck</h3>
+      <button onclick="closeAltModal()" style="background:transparent; border:1px solid var(--border); color:var(--text); padding:4px 10px; border-radius:6px; cursor:pointer;">Close</button>
+    </div>
+    <div id="alt-content" style="display:flex; flex-wrap:wrap; gap:12px;"></div>
+  </div>
 </div>
 
 <script>
@@ -217,11 +228,16 @@ async function load() {
   const lines = text.split('\n').slice(1).filter(l => l.trim());
   const parsed = lines.map(parseCSVLine).filter(c => c && c.id);
   const byBase = {};
+  const variants = {};
   parsed.forEach(c => {
-    const base = c.id.replace(/_p\d+$/, '');
-    if (!byBase[base] || !c.id.includes('_p')) byBase[base] = c;
+    const base = c.id.replace(/_[pr]\d+$/, '');
+    if (!variants[base]) variants[base] = [];
+    variants[base].push(c);
+    // prefer the plain base id over any _p or _r variant
+    if (!byBase[base] || !/_[pr]\d+$/.test(c.id)) byBase[base] = c;
   });
   allCards = Object.values(byBase);
+  window.cardVariants = variants;
   render();
   refreshTypesList();
 }
@@ -493,6 +509,46 @@ async function loadState() {
   } catch (e) {
     alert("Load error: " + e.message);
   }
+}
+
+
+function viewAltArts() {
+  if (!deck.length) { alert("Deck is empty"); return; }
+  const content = document.getElementById('alt-content');
+  content.innerHTML = '';
+  const seen = new Set();
+  let any = false;
+  deck.forEach(d => {
+    const base = d.id.replace(/_[pr]\d+$/, '');
+    if (seen.has(base)) return;
+    seen.add(base);
+    const vars = (window.cardVariants && window.cardVariants[base]) || [];
+    const alts = vars.filter(v => /_[pr]\d+$/.test(v.id));
+    if (!alts.length) return;
+    any = true;
+    const group = document.createElement('div');
+    group.style.cssText = 'flex:1 1 200px; background:#161b22; border:1px solid var(--border); border-radius:8px; padding:8px;';
+    group.innerHTML = `<div style="font-size:0.85em; margin-bottom:6px; color:var(--muted);">${base} · ${vars[0]?.name || ''}</div>`;
+    const imgs = document.createElement('div');
+    imgs.style.cssText = 'display:flex; flex-wrap:wrap; gap:6px;';
+    alts.forEach(a => {
+      const imgSrc = `https://optcg-api.arjunbansal-ai.workers.dev/images/${a.id}`;
+      const img = document.createElement('img');
+      img.src = imgSrc;
+      img.alt = a.id;
+      img.style.cssText = 'width:80px; height:auto; border-radius:4px; cursor:pointer; border:1px solid #444;';
+      img.onclick = () => openModal(imgSrc);
+      imgs.appendChild(img);
+    });
+    group.appendChild(imgs);
+    content.appendChild(group);
+  });
+  if (!any) content.innerHTML = '<div style="color:var(--muted);">No alt arts found for cards in deck.</div>';
+  document.getElementById('alt-modal').classList.add('open');
+}
+
+function closeAltModal() {
+  document.getElementById('alt-modal').classList.remove('open');
 }
 
 </script>
