@@ -187,7 +187,7 @@ button.secondary { background: #2a3650; }
       <div id="set-aside-list" style="font-size:0.85em;color:var(--muted);">Click × on a card to set it aside.</div>
     </div>
     <div class="panel" style="margin-top:12px;" id="deck-panel">
-      <h3>Deck <span id="deck-count" style="color:var(--gold);">0</span></h3>
+      <h3>Deck <span id="deck-count" style="color:var(--gold);">0</span> <span style="font-size:0.75em;color:var(--muted);">(click to remove)</span></h3>
       <div id="deck-list" style="font-size:0.8em;"></div>
       <button class="secondary" style="margin-top:8px;" onclick="copyDeck()">Copy OPTCGSim</button>
       <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
@@ -366,11 +366,18 @@ function addToDeck(id) {
   else deck.push({ id, qty: 1 });
   renderDeck();
 }
+function removeFromDeck(id) {
+  const existing = deck.find(d => d.id === id);
+  if (!existing) return;
+  existing.qty -= 1;
+  if (existing.qty <= 0) deck = deck.filter(d => d.id !== id);
+  renderDeck();
+}
 function renderDeck() {
   document.getElementById('deck-count').textContent = deck.reduce((s, d) => s + d.qty, 0);
   document.getElementById('deck-list').innerHTML = deck.map(d => {
     const c = allCards.find(x => x.id === d.id);
-    return `<div class="side-item">${d.qty}x ${d.id} ${c ? c.name : ''}</div>`;
+    return `<div class="side-item" onclick="removeFromDeck('${d.id}')" title="Click to remove one">${d.qty}x ${d.id} ${c ? c.name : ''}</div>`;
   }).join('') || '<div style="color:var(--muted);">Empty</div>';
 }
 function copyDeck() {
