@@ -3,633 +3,365 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bonney Playbook — OP17 Meta</title>
+<title>OPTCG Utility Cards</title>
 <style>
-  :root {
-    --bg: #0f1419;
-    --card: #1a2332;
-    --text: #e6edf3;
-    --muted: #8b949e;
-    --accent: #3fb950;
-    --warn: #d29922;
-    --danger: #f85149;
-    --border: #30363d;
-  }
-  * { box-sizing: border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    margin: 0;
-    padding: 16px;
-    line-height: 1.55;
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  h1 { font-size: 1.6rem; margin: 0 0 8px 0; color: #58a6ff; }
-  h2 { font-size: 1.25rem; margin: 28px 0 10px 0; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 4px; }
-  h3 { font-size: 1.05rem; margin: 18px 0 6px 0; color: #79c0ff; }
-  p, li { font-size: 0.95rem; }
-  .subtitle { color: var(--muted); margin-bottom: 20px; font-size: 0.9rem; }
-  .matchup {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-bottom: 18px;
-  }
-  .card-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 10px 0;
-    align-items: flex-start;
-  }
-  .card-row img {
-    width: 100px;
-    height: auto;
-    border-radius: 6px;
-    border: 1px solid #444;
-    background: #222;
-  }
-  .card-row .label {
-    font-size: 0.72rem;
-    color: var(--muted);
-    text-align: center;
-    max-width: 100px;
-  }
-  .priority { margin: 6px 0 0 0; padding-left: 18px; }
-  .priority li { margin-bottom: 6px; }
-  .swing {
-    background: #161b22;
-    border-left: 3px solid #58a6ff;
-    padding: 8px 12px;
-    margin: 10px 0;
-    font-size: 0.9rem;
-  }
-  .note {
-    background: #161b22;
-    border-left: 3px solid var(--warn);
-    padding: 8px 12px;
-    margin: 10px 0;
-    font-size: 0.9rem;
-    color: #d1d5db;
-  }
-  .general {
-    background: #1c2128;
-    border: 1px solid var(--accent);
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin: 20px 0;
-  }
-  .appendix { margin-top: 30px; }
-  .appendix .matchup { border-color: #238636; }
-  .small { font-size: 0.85rem; color: var(--muted); }
-  @media (max-width: 600px) {
-    .card-row img { width: 85px; }
-    body { padding: 10px; }
-  }
+:root {
+  --bg: #0b1220;
+  --panel: #121a2b;
+  --panel-2: #1a2438;
+  --text: #e8eef8;
+  --muted: #8b9bb4;
+  --accent: #e63946;
+  --gold: #f4a261;
+  --blue: #457b9d;
+  --green: #2a9d8f;
+  --border: #2a3650;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: linear-gradient(180deg, #0b1220 0%, #0f1a2e 100%);
+  color: var(--text);
+  margin: 0;
+  padding: 16px 20px 40px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+h1 { color: var(--gold); margin: 0 0 4px; font-size: 1.6em; }
+.subtitle { color: var(--muted); margin: 0 0 16px; font-size: 0.9em; }
+a { color: #7eb8ff; text-decoration: none; }
+a:hover { text-decoration: underline; }
 
-  .card-row img { cursor: pointer; }
-  .card-row img:hover { opacity: 0.85; }
-  .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
-  .modal.open { display: flex; }
-  .modal img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
-  .modal-close { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 36px; cursor: pointer; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+input[type="text"] {
+  flex: 1; min-width: 200px; padding: 8px 12px; border-radius: 20px;
+  border: 1px solid var(--border); background: var(--panel); color: var(--text);
+}
+button {
+  background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+  padding: 6px 12px; border-radius: 16px; cursor: pointer; font-size: 0.85em;
+}
+button:hover { background: #243049; }
+button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.secondary { background: #2a3650; }
 
+.sidebar {
+  display: grid; grid-template-columns: 280px 1fr 260px; gap: 16px; margin-top: 16px;
+}
+@media (max-width: 1100px) {
+  .sidebar { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px; max-height: 70vh; overflow-y: auto;
+}
+.panel h3 { margin: 0 0 8px; font-size: 0.95em; color: var(--gold); }
+
+.card {
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; margin: 8px 0; display: flex; gap: 10px;
+}
+.card.minimized .card-text { display: none; }
+.card.hidden { display: none !important; }
+.thumb {
+  width: 52px; height: 72px; object-fit: cover; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--border); flex-shrink: 0;
+}
+.card-body { flex: 1; min-width: 0; }
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.card-id { font-weight: 700; color: #7eb8ff; font-size: 0.9em; }
+.card-name { font-weight: 600; }
+.block-badge {
+  display: inline-block; background: var(--gold); color: #000; font-size: 0.7em;
+  font-weight: 700; padding: 1px 6px; border-radius: 8px; margin-left: 6px;
+}
+.meta { color: var(--muted); font-size: 0.8em; }
+.badges { margin-top: 4px; }
+.badge {
+  display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 0.65em;
+  font-weight: 700; margin-right: 3px; background: #2a3650;
+}
+.card-text { margin-top: 6px; font-size: 0.85em; line-height: 1.4; white-space: pre-wrap; }
+.card-actions { display: flex; gap: 4px; }
+.card-actions button { padding: 2px 8px; font-size: 0.75em; }
+
+.side-item {
+  font-size: 0.8em; padding: 4px 0; border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.side-item:hover { background: #1e2a42; }
+.type-row { display: flex; justify-content: space-between; font-size: 0.8em; padding: 2px 0; }
+.type-count { color: var(--gold); }
+
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+.modal.open { display: flex; }
+.modal img { max-width: 90%; max-height: 90%; border-radius: 8px; }
 </style>
 </head>
 <body>
+<h1>OPTCG Utility Cards</h1>
+<p class="subtitle">
+  <a href="playbook.html">Bonney Playbook</a> ·
+  <a href="https://github.com/JakeVestal/optcg_playbook" target="_blank">GitHub</a>
+</p>
 
-<h1>Bonney Playbook</h1>
-<p class="subtitle">OP17 meta · October 2026 · Focus: Green Jewelry Bonney</p>
-<p class="subtitle" style="margin-top:4px;"><a href="utility_cards.html" style="color:#58a6ff; text-decoration:none;">→ Green Utility Cards (Rest / Freeze / DON / Draw / Keywords)</a></p>
-<p style="margin:8px 0;"><a href="https://github.com/JakeVestal/optcg_playbook" target="_blank" rel="noopener" style="display:inline-block;"><img src="https://img.shields.io/badge/GitHub-Repo-181717?style=flat&logo=github" alt="GitHub Repo"></a></p>
-
-
-
-<div class="general">
-  <strong>Core rule:</strong> Rest the body that is about to cause the most
-  damage. Kill the one that is already rested. Disrupt DON!! and ramps at
-  critical points to set up an overwhelming finish. Make sure an incoming
-  10k–12k swing carries a heavy cost for the opponent whenever possible.
+<div class="toolbar">
+  <input id="search" type="text" placeholder="Search ID, name, or text..." oninput="render()">
+  <button class="secondary" onclick="clearSearch()">Clear</button>
 </div>
 
-<div class="general">
-  <strong>Swing math (practical heuristic):</strong><br>
-  Most meta decks run roughly 8–12 cards with +2000 counter (plus some +1000s and events). Average card in hand is ~900–1000 counter power. Against a typical 5-card hand with no DON!! up, assume ~4–5k of counter available.<br>
-  <strong>For a 12k body:</strong> swing at least 14k–16k to force real counter investment or have a good chance of going through. Higher if they have DON!! active (each standing DON!! roughly doubles the threat of an Event counter). Ties go to the attacker.
+<div class="toolbar" id="block-filter">
+  <span style="color:var(--muted);font-size:0.85em;">Block:</span>
+  <button onclick="toggleBlock(this,'1')">1</button>
+  <button onclick="toggleBlock(this,'2')">2</button>
+  <button onclick="toggleBlock(this,'3')">3</button>
+  <button onclick="toggleBlock(this,'4')">4</button>
+  <button onclick="toggleBlock(this,'5')">5</button>
+  <button onclick="toggleBlock(this,'X')">X</button>
+  <button class="secondary" onclick="clearBlocks()">All Blocks</button>
 </div>
 
-<div class="general">
-  <strong>Leader vs Character (when to go face):</strong><br>
-  Swing the leader when you can take a life and the remaining board cannot kill you next turn, or when the character you would clear is already frozen and cannot attack.<br>
-  Swing the character when it is about to attack, lock one of your bodies, or is the one that makes face swings fail (Newgate, Shiki, Beckman).<br>
-  If the board can still swing back and finish you, clear or freeze the attacker first. A failed face swing only feeds counters and leaves the body that ends the game. (Seen in both the Rosinante and OP17 Shanks games.)
+<div class="toolbar" id="color-filter">
+  <button onclick="toggleColor(this,'Green')">Green</button>
+  <button onclick="toggleColor(this,'Red')">Red</button>
+  <button onclick="toggleColor(this,'Blue')">Blue</button>
+  <button onclick="toggleColor(this,'Purple')">Purple</button>
+  <button onclick="toggleColor(this,'Yellow')">Yellow</button>
+  <button onclick="toggleColor(this,'Black')">Black</button>
+  <button class="secondary" onclick="clearColors()">All Colors</button>
 </div>
 
-<div class="general">
-  <strong>Quick Hit List — What to watch for</strong>
-  <table style="width:100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 10px;">
-    <thead>
-      <tr style="background:#161b22; text-align:left;">
-        <th style="padding:6px; border-bottom:1px solid #30363d;">Matchup</th>
-        <th style="padding:6px; border-bottom:1px solid #30363d;">Adds Life?</th>
-        <th style="padding:6px; border-bottom:1px solid #30363d;">Effect KO? (Laboon)</th>
-        <th style="padding:6px; border-bottom:1px solid #30363d;">Uses DON on your turn?</th>
-        <th style="padding:6px; border-bottom:1px solid #30363d;">Freeze rested DON / Arlong?</th>
-        <th style="padding:6px; border-bottom:1px solid #30363d;">Key notes</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td style="padding:6px; border-bottom:1px solid #30363d;">Black Imu</td><td>No</td><td>No</td><td>No</td><td>Low</td><td>Elders hard to remove once trash high. Race early.</td></tr>
-      <tr><td style="padding:6px; border-bottom:1px solid #30363d;">Purple Enel</td><td>No</td><td>No</td><td>No</td><td>Maybe (pumped body)</td><td>Dumps 5 DON and sticks 4 on one body. Freeze that body.</td></tr>
-      <tr><td style="padding:6px; border-bottom:1px solid #30363d;">Rocks</td><td>No</td><td>Limited (Stussy locks)</td><td>No</td><td>Possible</td><td>Chip constantly. Prioritize Stussy, Newgate, Captain John. Do not let the board build.</td></tr>
-      <tr><td style="padding:6px; border-bottom:1px solid #30363d;">Ace</td><td>No</td><td>No</td><td>No</td><td>Low</td><td>Rush bodies. Trade the rested high-value piece.</td></tr>
-      <tr><td style="padding:6px; border-bottom:1px solid #30363d;">Sabo</td><td>No</td><td>No</td><td>No</td><td>Low</td><td>Keep cost-8+ body rested so leader buff does not free-swing.</td></tr>
-      <tr style="background:#1c2128;"><td style="padding:6px; border-bottom:1px solid #30363d;">Kaido</td><td>No</td><td>No</td><td>No</td><td><strong>Yes (engines)</strong></td><td>Queen/King ramp. King cannot be cleanly K.O.’d (returns DON). Rest/freeze him or ignore and race the 12k Kaidos.</td></tr>
-      <tr style="background:#1c2128;"><td style="padding:6px; border-bottom:1px solid #30363d;">Boa Hancock</td><td>Can steal</td><td>No</td><td><strong>Yes</strong></td><td><strong>Yes — high value</strong></td><td>Leader draws when you play. Can act on your turn. Freeze her DON / Arlong.</td></tr>
-      <tr><td style="padding:6px; border-bottom:1px solid #30363d;">Elbaph Luffy</td><td>No</td><td>No</td><td>No</td><td>Low</td><td>Giants become blockers at cost 12+. Rest the Giant.</td></tr>
-      <tr><td style="padding:6px; border-bottom:1px solid #30363d;">Luffy & Ace</td><td>No</td><td>No</td><td>No</td><td>Low</td><td>Wide board of attackers. Rest the biggest active one.</td></tr>
-      <tr><td style="padding:6px; border-bottom:1px solid #30363d;">Pudding</td><td><strong>Yes</strong> (flips Life)</td><td>No</td><td>No</td><td>Low</td><td>Rest the big Charlotte before it swings / heals.</td></tr>
-      <tr><td style="padding:6px; border-bottom:1px solid #30363d;">Robin</td><td>No</td><td>No</td><td>No</td><td>Low</td><td>Banish + ramp by trashing Triggers. Freeze the ramp body.</td></tr>
-      <tr><td style="padding:6px; border-bottom:1px solid #30363d;">Green Shanks</td><td>No</td><td>No</td><td>No</td><td>Low</td><td>Leader freezes your rested characters. Do not leave multiple active.</td></tr>
-      <tr><td style="padding:6px; border-bottom:1px solid #30363d;">Yellow Enel</td><td><strong>Yes</strong> (restores at 0)</td><td>No</td><td>No</td><td>Low</td><td>Life restore once per turn. Race before the big body.</td></tr>
-      <tr style="background:#1c2128;"><td style="padding:6px; border-bottom:1px solid #30363d;">Black Yamato</td><td>No</td><td><strong>Yes</strong> (Ground Death)</td><td>No</td><td>Low</td><td>Rush from trash. Freeze the body that just arrived. Keep Laboon ready.</td></tr>
-    </tbody>
-  </table>
-  <p class="small" style="margin-top:8px;">Freezer Bonney = OP07-026. High-value DON freeze / Arlong turns are highlighted (Kaido, Boa, Yamato).</p>
+<div class="toolbar" id="cat-filter">
+  <button onclick="toggleCat(this,'LEADER')">Leaders</button>
+  <button onclick="toggleCat(this,'CHARACTER')">Characters</button>
+  <button onclick="toggleCat(this,'EVENT')">Events</button>
+  <button onclick="toggleCat(this,'STAGE')">Stages</button>
+  <button class="secondary" onclick="clearCats()">All Types</button>
 </div>
 
-<div class="general">
-  <strong>Leader Mnemonics — what to think the moment you see the leader</strong>
-  <ul style="font-size:0.9rem; margin-top:8px;">
-    <li><strong>Black Imu:</strong> “Empty Throne into Elders. Race before the board-wipe and trash replay.”</li>
-    <li><strong>Purple Enel:</strong> “Dumps 5 DON, sticks 4 on one body. Freeze that body.”</li>
-    <li><strong>Rocks:</strong> “Chip the board. Clear Stussy / Newgate / Captain John. Do not let him build.”</li>
-    <li><strong>Ace:</strong> “Rush bodies that swing the turn they land. Trade the rested one.”</li>
-    <li><strong>Sabo:</strong> “Gets a cost-8+ body, then buffs the whole board. Keep the high-cost piece rested.”</li>
-    <li><strong>Kaido:</strong> “Queen and King ramp. King returns DON instead of dying. Rest/freeze him or ignore and race the 12k bodies.”</li>
-    <li><strong>Boa Hancock:</strong> “Acts on your turn. Freezes and draws when you play. Mess with her DON.”</li>
-    <li><strong>Elbaph Luffy:</strong> “Giants hit cost 12 and become blockers. Rest the Giant.”</li>
-    <li><strong>Luffy & Ace:</strong> “Wide board of efficient attackers. Rest the biggest active one.”</li>
-    <li><strong>Pudding:</strong> “Flips Life face-up to ramp, then heals with big Charlottes. Rest the healer.”</li>
-    <li><strong>Robin:</strong> “Banish pressure and ramps by trashing Triggers. Freeze the ramp piece.”</li>
-    <li><strong>Green Shanks:</strong> “Freezes your rested characters. Do not leave multiple active bodies.”</li>
-    <li><strong>Yellow Enel:</strong> “Restores a Life when it hits zero. Race before the big body.”</li>
-    <li><strong>Black Yamato:</strong> “Fills trash, then plays bodies from it with Rush. Freeze the one that just arrived. Laboon for Ground Death.”</li>
-  </ul>
+<div class="toolbar" id="tag-filter">
+  <button onclick="toggleTag(this,'REST')">REST</button>
+  <button onclick="toggleTag(this,'FREEZE')">FREEZE</button>
+  <button onclick="toggleTag(this,'DON')">DON</button>
+  <button onclick="toggleTag(this,'RESTAND_DON')">RESTAND_DON</button>
+  <button onclick="toggleTag(this,'DRAW')">DRAW</button>
+  <button onclick="toggleTag(this,'BLOCKER')">BLOCKER</button>
+  <button onclick="toggleTag(this,'RUSH')">RUSH</button>
+  <button onclick="toggleTag(this,'UNBLOCKABLE')">UNBLOCKABLE</button>
+  <button onclick="toggleTag(this,'DOUBLE_ATTACK')">DOUBLE_ATTACK</button>
+  <button onclick="toggleTag(this,'ON_KO')">ON K.O.</button>
+  <button onclick="toggleTag(this,'ADD_DON')">Add DON!!</button>
+  <button onclick="toggleTag(this,'ADD_LIFE')">Add Life</button>
+  <button onclick="toggleTag(this,'COUNTER2000')">+2000</button>
+  <button onclick="toggleTag(this,'COUNTER1000')">+1000</button>
+  <button class="secondary" onclick="clearTags()">Clear Tags</button>
 </div>
 
-<!-- Black Imu -->
-<div class="matchup">
-  
-<div class="matchup" style="border-left: 3px solid #f85149;">
-  <h2>Small bodies that become problems</h2>
-  <p>These look harmless (low power, no immediate threat) but interact with a bigger card or the leader. Clear them before the payoff arrives.</p>
-  <ul class="priority">
-    <li><strong>PY Robin:</strong> Charlottes and any 4000-base Trigger bodies. Harmless until OP17-112 Linlin. Then they become 8000 on her turn.</li>
-    <li><strong>Red Ace:</strong> Any Luffy (gains Rush from leader). Any Whitebeard Pirates with 8000+ power (same). Marco (eats removal, then comes back).</li>
-    <li><strong>Rocks:</strong> Captain John (once rested, everything must attack him). Stussy (locks attackers). Newgate (+3000 wall).</li>
-    <li><strong>Boa:</strong> Any 5000+ Kuja / Amazon Lily body. Leader draws and can steal life when one is KO’d.</li>
-    <li><strong>Kaido:</strong> Queen and King (the ramp). Especially King — see below.</li>
-  </ul>
+<div class="toolbar">
+  <span style="color:var(--muted);font-size:0.85em;">Sort:</span>
+  <button onclick="setSort('cost')">Cost</button>
+  <button onclick="setSort('power')">Power</button>
+  <button onclick="setSort('counter')">Counter</button>
+  <button class="secondary" onclick="setSort('')">Default</button>
 </div>
 
-<h2>Black Imu</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP13-079" alt="Imu"><div class="label">OP13-079 Imu</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP13-082" alt="Five Elders"><div class="label">OP13-082 Five Elders</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP13-084" alt="Ju Peter"><div class="label">OP13-084 Ju Peter</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP13-091" alt="Mars"><div class="label">OP13-091 Mars</div></div>
-  </div>
-  <p><strong>Win condition:</strong> Flood with Celestial Dragons, then OP13-082 trashes the board and replays up to five 5000-power Elders from trash. Once trash ≥7 most Elders cannot be removed by effects.</p>
-  <p><strong>Effect KO:</strong> No. Laboon not required.</p>
-  <p><strong>Key turn:</strong> OP13-082 hits (usually at 10 DON!!). Earliest realistic is their 5th turn going second under perfect conditions.</p>
-  <p><strong>Disrupt:</strong> Rest active Elders before they swing. Freeze the biggest one with Carrot. Resting OP13-082 does <em>not</em> stop its Activate: Main.</p>
-  <p><strong>Your plan:</strong> Race before the Elders come down. Take early life so you can drop Hody on 7 or a 9-cost on 9 and start clearing the rested ones.</p>
-  <h3>Priority targets (once Elders are out)</h3>
-  <ol class="priority">
-    <li><strong>St. Shepherd Ju Peter (OP13-084)</strong> — sets all Five Elders to 7000 base power</li>
-    <li><strong>St. Marcus Mars (OP13-091)</strong> — On Play KO (cost ≤5) + becomes Blocker</li>
-    <li>Any active Elder about to swing this turn</li>
-    <li>St. Ethanbaron V. Nusjuro (attack / power reduction)</li>
-    <li>St. Jaygarcia Saturn / St. Topman Warcury (searcher / defensive)</li>
-  </ol>
-  <div class="swing"><strong>Swing note:</strong> Elders are usually 5k–7k base. A 9-cost Shanks or Hody (with a little DON!!) is often enough to force counters or trade. Against a 12k+ body, push to 14k+.</div>
-  <div class="note">No green card can rest or destroy The Empty Throne stage. Ignore it and play around the bodies.</div>
-  <p><strong>Nasty tricks:</strong> Starts with The Empty Throne (OP13-099) free. Plays Five Elders for 3 DON!! via the Stage. OP13-082 trashes the whole board and plays up to 5 different Elders from trash. No Events ≥2 cost. Elders become hard to remove once trash is high.</p>
-</div>
-
-<!-- Purple Enel -->
-<div class="matchup">
-  <h2>Purple Enel</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP15-058" alt="Enel Leader"><div class="label">OP15-058 Enel</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP15-118" alt="6c Enel"><div class="label">6-cost Enel</div></div>
-  </div>
-  <p><strong>Win condition:</strong> 6-DON!! deck. Leader dumps 5 DON!! at once and attaches 4 rested DON!! to a cheap body for 10k–14k swings. Closes with sticky 6-cost Enel (immune +2000 while ≤6 DON!!).</p>
-  <p><strong>Effect KO:</strong> No. Laboon not required.</p>
-  <p><strong>Key turn:</strong> Leader ability goes off and a 1-cost (Ohm/Shura) or the 6-cost Enel receives the 4 DON!!.</p>
-  <p><strong>Disrupt:</strong> Rest the body that just received the DON!!. Freeze the 6-cost Enel. Clear the pumped body the same turn.</p>
-  <p><strong>Your plan:</strong> Do not leave a 10k+ attacker active. Take life early and force them to spend the dump defensively.</p>
-  <h3>Priority targets</h3>
-  <ul class="priority">
-    <li>The Character that just received the 4 DON!!</li>
-    <li>OP15-060 / OP15-118 Enel</li>
-    <li>Ohm, Shura</li>
-  </ul>
-  <div class="swing"><strong>Swing note:</strong> The pumped body is often 10k–14k. Rest it first, then swing with a closer (Hody or 9-cost) that can push past 14k. The 6-cost Enel is sticky but still dies to a rested trade if you freeze or rest it.</div>
-  <p><strong>Nasty tricks:</strong> DON!! deck is only 6 cards. Leader adds 1 active + 4 rested and attaches the 4 to one Character for massive swings. 6-cost Enel is sticky.</p>
-</div>
-
-<!-- Rocks -->
-<div class="matchup">
-  <h2>Rocks D. Xebec</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-039" alt="Rocks Leader"><div class="label">OP17-039 Rocks</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-118" alt="10c Rocks"><div class="label">OP17-118 Rocks</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-054" alt="Stussy"><div class="label">OP17-054 Stussy</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-040" alt="Newgate"><div class="label">OP17-040 Newgate</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-044" alt="Captain John"><div class="label">OP17-044 Captain John</div></div>
-  </div>
-  <p><strong>Core idea:</strong> Do not let Rocks build a stable board. Chip constantly. Prioritize the pieces that let him stabilize or lock you out.</p>
-  <p><strong>Win condition:</strong> Leader draws extra on attack. Builds with Kyo / Stussy / Newgate / Shiki / Captain John, then OP17-118 plays two Rocks Pirates (combined cost ≤9) from hand for a free board.</p>
-  <p><strong>Effect KO:</strong> Limited. Stussy locks attackers. Laboon optional.</p>
-  <p><strong>Key turn:</strong> 10-cost Rocks hits and dumps Linlin + Shiki (or similar). Or when Captain John rests and forces all attacks onto him.</p>
-  <p><strong>Disrupt / Priority:</strong> Chip the board every turn. Clear or rest the lock/stabilizer pieces before they matter.</p>
-  <p><strong>Your plan:</strong> Keep pressure so he cannot freely develop. Having big bodies of your own is critical so you can trade or clear the high-value pieces. Go face only when the board cannot punish you for it.</p>
-  <h3>Priority targets</h3>
-  <ul class="priority">
-    <li><strong>Stussy (OP17-054)</strong> — locks one of your characters from attacking. Clear the lock.</li>
-    <li><strong>Edward Newgate (OP17-040)</strong> — +3000 to leader on attack or defense. Keeps him alive.</li>
-    <li><strong>Captain John (OP17-044)</strong> — when rested, opponent cannot attack anything else. You are forced to hit him; treat it as a must-clear.</li>
-    <li>Shiki (OP17-048) — Rush + −3000 on your characters</li>
-    <li>Kyo (OP17-045) — early draw + protects characters from removal</li>
-    <li>10-cost Rocks character (already played its On Play)</li>
-  </ul>
-  <div class="swing"><strong>Swing note:</strong> Against a rested Captain John you have no choice — everything must attack him. Do not swing a closer into Shiki unless you are already above his −3000 + counter line. Rest or freeze the key piece first, then clear Newgate/Stussy, then go face.</div>
-</div>
-
-
-<!-- Purple/Yellow Robin -->
-<div class="matchup">
-  <h2>Purple/Yellow Robin</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP09-062" alt="Robin Leader"><div class="label">OP09-062 Robin</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-112" alt="Linlin"><div class="label">OP17-112 Linlin</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-106" alt="Smoothie"><div class="label">OP17-106 Smoothie</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-110" alt="Perospero"><div class="label">OP17-110 Perospero</div></div>
-  </div>
-  <p><strong>Banish is permanent.</strong> Every time Robin’s Leader deals damage to your Leader, the Life card is trashed instead of going to hand. Counters do not stop Banish if the attack still connects. The only ways to stop it are making the attack fail or blocking with a Character.</p>
-  <p><strong>Win condition:</strong> Leader attacks to Banish and ramp (trash a Trigger from hand to add a rested DON!!). Accelerates into the Big Mom / Charlotte package (Linlin, Smoothie, Perospero, Pudding, etc.) for Life burn and heals.</p>
-  <p><strong>Effect KO:</strong> No. Laboon optional.</p>
-  <p><strong>Key turn:</strong> She ramps once or twice, then drops a high-cost Charlotte that can swing or heal.</p>
-  <p><strong>Disrupt:</strong> Rest or freeze the Charlotte that just received the ramped DON!! or that is about to heal/swing. The Leader swing itself is hard to prevent; limit the follow-up.</p>
-  <p><strong>Your plan:</strong> Race while the board is thin. Once a big Charlotte is out, prioritize resting or freezing it before it can attack or trigger a heal. Do not leave Smoothie or Perospero active if they can chain into a Life add + Rush swing.</p>
-  <h3>Priority targets (which Charlotte)</h3>
-  <ol class="priority">
-    <li><strong>Charlotte Smoothie (OP17-106)</strong> — heals by adding a card to Life and can force you to resolve a card. Highest immediate threat once DON!! is online.</li>
-    <li><strong>Charlotte Perospero (OP17-110)</strong> — can give himself Rush and re-play Smoothie or other bodies. Often the enabler of the double-swing turn.</li>
-    <li><strong>Charlotte Linlin (OP17-112)</strong> — big body that can swing hard or set up further plays. Rest it before it attacks.</li>
-    <li>Charlotte Pudding (OP17-109) — Life burn / pressure.</li>
-    <li>Any other Charlotte that just received the extra DON!! from the Leader ramp.</li>
-  </ol>
-  <div class="swing"><strong>Swing note:</strong> After she ramps, the body with the extra DON!! is usually 8k–12k+. Rest or freeze it first. A failed closer into a rested Linlin or Smoothie leaves the threat alive for her next turn.</div>
-  <div class="note"><strong>Banish reminder:</strong> Every successful Leader attack permanently denies you a Life card. You cannot stop the declaration; you can only make the attack fail, block it, or race so the denial matters less.</div>
-</div>
-
-<!-- Ace -->
-<div class="matchup">
-  <h2>Portgas D. Ace</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP16-001" alt="Ace Leader"><div class="label">OP16-001 Ace</div></div>
-  </div>
-  <p><strong>Win condition:</strong> Whitebeard Pirates midrange. Plays Marco / Newgate / Luffy that can Rush or restand, then Ace gives Rush and pressures life.</p>
-  <p><strong>Effect KO:</strong> No. Laboon not required.</p>
-  <p><strong>Key turn:</strong> Newgate or a Rush body comes down and immediately swings.</p>
-  <p><strong>Disrupt:</strong> Rest the body about to attack. Freeze Marco or Newgate so they cannot follow up. Clear the rested body immediately.</p>
-  <p><strong>Your plan:</strong> Do not give a free second swing. Trade into the rested high-value piece the turn it appears.</p>
-  <h3>Priority targets</h3>
-  <ul class="priority">
-    <li>Edward Newgate</li>
-    <li>Marco</li>
-    <li>Any Luffy that just gained Rush</li>
-  </ul>
-  <div class="swing"><strong>Swing note:</strong> Newgate is often 8k–10k+. Rest him, then swing with a closer that can push to 12k–14k. Rush bodies are lower power but dangerous if left active.</div>
-</div>
-
-<!-- Sabo -->
-<div class="matchup">
-  <h2>Red/Black Sabo</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP13-004" alt="Sabo Leader"><div class="label">OP13-004 Sabo</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP13-120" alt="8c Sabo"><div class="label">OP13-120 Sabo</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP12-094" alt="Dragon"><div class="label">OP12-094 Dragon</div></div>
-  </div>
-  <p><strong>Win condition:</strong> Builds Revolutionary Army / Straw Hats, gets a Character to cost 8+ (often OP13-120 Sabo or Dragon), then leader + DON!! gives everyone +1000. Closes with Dragon or the 8-cost Sabo blocker.</p>
-  <p><strong>Effect KO:</strong> No. Laboon not required.</p>
-  <p><strong>Key turn:</strong> Cost-8+ body is on board and Sabo attaches DON!!.</p>
-  <p><strong>Disrupt:</strong> Rest the cost-8+ body before it swings. Freeze Dragon or the big Sabo.</p>
-  <p><strong>Your plan:</strong> Keep the high-cost body rested so the leader buff does not produce free swings.</p>
-  <h3>Priority targets</h3>
-  <ul class="priority">
-    <li>Monkey D. Dragon (OP12-094)</li>
-    <li>OP13-120 Sabo</li>
-    <li>Any Character that just became cost 8+</li>
-  </ul>
-  <div class="swing"><strong>Swing note:</strong> The cost-8+ body is usually 7k–9k base. Rest it, then a 9-cost closer (especially with 1–2 DON!!) is usually enough to force counters or trade.</div>
-</div>
-
-<!-- Kaido -->
-<div class="matchup">
-  <h2>Purple Kaido</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-058" alt="Kaido Leader"><div class="label">OP17-058 Kaido</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-062" alt="Kaido Blocker"><div class="label">OP17-062 Kaido</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-063" alt="Kaido Removal"><div class="label">OP17-063 Kaido</div></div>
-  </div>
-  <p><strong>Win condition:</strong> Ramps with Queen / King to reach 10 DON!! fast, then drops 12000-power Kaidos (OP17-062 blocker that also ramps, OP17-063 that removes).</p>
-  <p><strong>Effect KO:</strong> No. Laboon not required.</p>
-  <p><strong>Key turn:</strong> King hits (~6 DON!!) and the first 10-cost Kaido comes down.</p>
-  <p><strong>Disrupt:</strong> Rest the Kaido that just came down. Freeze the one about to swing. Kill the rested one.</p>
-  <p><strong>DON!! engines:</strong> Queen (rest 2 to add 1 rested), King (add 1 active + 1 rested), Yamato / Basil Hawkins (early backups), OP17-062 Kaido (recovers when DON!! is returned).</p>
-  <p><strong>King (EB04-031) specifically:</strong> If he would be K.O.’d he can return 1 DON!! instead and stay. Attacking him over and over just feeds him DON!! returns and does not clear him. Better options: rest him so he cannot activate, freeze him so he cannot attack or activate next turn, or ignore him and race the leader once the 12k Kaidos are dealt with. Do not treat him as a normal body you can trade into.</p>
-  <p><strong>Your plan:</strong> Disrupt the DON!! engines. Rest or freeze King rather than trading into him. Do not let Kaido reach a clean 10 DON!! turn with an active 12k. Once you have your own closers, trade into the 12k bodies and race.</p>
-  <h3>Priority targets</h3>
-  <ul class="priority">
-    <li>King (EB04-031)</li>
-    <li>OP17-062 Kaido</li>
-    <li>OP17-063 Kaido</li>
-  </ul>
-  <div class="swing"><strong>Swing note:</strong> Kaidos are 12k. Expect 2-4k Counter in hand (events + small bodies + OP17-063 giving +1000 to zero-Counter cards) plus the leader's -2000. Swing at least 4k over the target (so 16k+ into a 12k) to force real investment. Rest first.</div>
-</div>
-
-<!-- Boa Hancock -->
-<div class="matchup">
-  <h2>Blue/Yellow Boa Hancock</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP14-041" alt="Boa Leader"><div class="label">OP14-041 Boa</div></div>
-  </div>
-  <p><strong>Win condition:</strong> Swarm of Kuja / Amazon Lily bodies (many with Trigger). Leader draws when you play on the opponent’s turn and can steal life when a 5000+ Kuja is KO’d. Closes with Perfume Femur or 9-cost Boa.</p>
-  <p><strong>Effect KO:</strong> No. Laboon not required.</p>
-  <p><strong>Key turn:</strong> Triggers start resolving and she chains free bodies + draws.</p>
-  <p><strong>Disrupt:</strong> Rest the active 5000+ body about to swing (or the one that just triggered). Freeze the biggest one.</p>
-  <p><strong>Your plan:</strong> Clear the rested body so she does not get free value from the KO. Do not leave multiple 5000s active.</p>
-  <h3>Priority targets</h3>
-  <ul class="priority">
-    <li>Ran, Gorgon Sisters, Shakuyaku</li>
-    <li>9-cost Boa</li>
-    <li>Any Trigger body that just entered</li>
-  </ul>
-  <div class="swing"><strong>Swing note:</strong> Most of the swarm is 5k–6k. A midrange closer or even a pumped 5k character is often enough once the target is rested. The 9-cost Boa needs a real closer.</div>
-</div>
-
-<!-- Black Elbaph Luffy -->
-<div class="matchup">
-  <h2>Black Elbaph Luffy</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-079" alt="Elbaph Luffy"><div class="label">OP17-079 Luffy</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-119" alt="Loki"><div class="label">OP17-119 Loki</div></div>
-  </div>
-  <p><strong>Win condition:</strong> Plays Giants that become cost 12+ (Gerd, Loki, etc.), turning on the leader ability so those bodies gain Blocker. Cheap Straw Hats become efficient attackers, then the 8/9-cost Luffy finishes.</p>
-  <p><strong>Effect KO:</strong> No. Laboon not required.</p>
-  <p><strong>Key turn:</strong> First cost-12+ Giant hits and the board turns into blockers.</p>
-  <p><strong>Disrupt:</strong> Rest the Giant that just became a blocker. Freeze Loki or the big Luffy. Kill the rested Giant.</p>
-  <p><strong>Your plan:</strong> Do not let them keep a wall of blockers while the cheap attackers swing.</p>
-  <h3>Priority targets</h3>
-  <ul class="priority">
-    <li>Loki (OP17-119)</li>
-    <li>Gerd</li>
-    <li>The 8/9-cost Luffy</li>
-    <li>Any Giant that just became cost 12+</li>
-  </ul>
-  <div class="swing"><strong>Swing note:</strong> Giants are high power. Rest the blocker Giant, then swing with a 9-cost closer. Aim for 14k+ against a 10k–12k Giant if you want a clean trade.</div>
-</div>
-
-<!-- Luffy & Ace -->
-<div class="matchup">
-  <h2>Luffy & Ace / Red-Green Luffy</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/ST30-001" alt="Luffy & Ace"><div class="label">ST30-001 Luffy & Ace</div></div>
-  </div>
-  <p><strong>Win condition:</strong> Straw Hat midrange. Builds a wide board of efficient attackers and events, then closes with high-power swings or a big Luffy.</p>
-  <p><strong>Effect KO:</strong> No. Laboon not required.</p>
-  <p><strong>Key turn:</strong> The turn they have multiple bodies that can all swing.</p>
-  <p><strong>Disrupt:</strong> Rest the biggest active attacker. Freeze the one about to go.</p>
-  <p><strong>Your plan:</strong> Clear one body per turn so they cannot chain multiple swings.</p>
-  <h3>Priority targets</h3>
-  <ul class="priority">
-    <li>The highest-power Straw Hat currently active</li>
-    <li>Any Luffy that just gained Rush or a big power buff</li>
-  </ul>
-  <div class="swing"><strong>Swing note:</strong> Board is usually efficient 5k–7k bodies. Once rested, a midrange closer or even a 7k–9k swing often forces counters. Focus on removing one threat per turn.</div>
-</div>
-
-<!-- Charlotte Pudding -->
-<div class="matchup">
-  <h2>Charlotte Pudding</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP08-058" alt="Pudding"><div class="label">OP08-058 Pudding</div></div>
-  </div>
-  <p><strong>Win condition:</strong> Ramps by flipping Life face-up on attack, then drops big Charlottes (Linlin, Katakuri, Ace) to heal and pressure.</p>
-  <p><strong>Effect KO:</strong> No. Laboon not required.</p>
-  <p><strong>Key turn:</strong> First big Linlin or Katakuri hits (often turn 4 going first).</p>
-  <p><strong>Disrupt:</strong> Rest the big Charlotte before it swings. Freeze the one about to attack. Clear the rested body the same turn.</p>
-  <p><strong>Your plan:</strong> Do not let the ramp + heal stabilize. Trade into the big body immediately.</p>
-  <h3>Priority targets</h3>
-  <ul class="priority">
-    <li>Charlotte Linlin</li>
-    <li>Charlotte Katakuri</li>
-    <li>Any body that just healed or ramped</li>
-  </ul>
-  <div class="swing"><strong>Swing note:</strong> Big Charlottes are 8k–12k. Rest first, then swing with a 9-cost closer at 14k+ for a good chance of trading. Smaller bodies die to midrange swings once rested.</div>
-</div>
-
-<!-- Nico Robin -->
-<div class="matchup">
-  <h2>Purple/Yellow Nico Robin</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP09-062" alt="Robin"><div class="label">OP09-062 Robin</div></div>
-  </div>
-  <p><strong>Win condition:</strong> Leader has Banish and ramps by trashing a Trigger on attack. Builds to high-cost bodies (Linlin, Yamato, etc.) and uses Banish pressure.</p>
-  <p><strong>Effect KO:</strong> No. Laboon not required.</p>
-  <p><strong>Key turn:</strong> First ramp + high-cost body (often turn 3–4).</p>
-  <p><strong>Disrupt:</strong> Rest the body that just came down or the one about to swing. Freeze the biggest one.</p>
-  <p><strong>Your plan:</strong> Take life before the top-end arrives. Clear the rested high-cost body immediately so the Banish + ramp does not snowball.</p>
-  <h3>Priority targets</h3>
-  <ul class="priority">
-    <li>The highest-cost body currently active</li>
-    <li>Any Trigger body about to swing</li>
-    <li>The 6-cost Robin if it is about to Banish life</li>
-  </ul>
-  <div class="swing"><strong>Swing note:</strong> High-cost bodies are the threat. Rest them, then use a 9-cost closer. Aim for 14k–16k against a 10k–12k body to force real counters.</div>
-</div>
-
-<!-- Green Shanks -->
-<div class="matchup">
-  <h2>Green Shanks</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-020" alt="Shanks Leader"><div class="label">OP17-020 Shanks</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-022" alt="10c Shanks"><div class="label">OP17-022 Shanks</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-031" alt="Yasopp"><div class="label">OP17-031 Yasopp</div></div>
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP17-027" alt="Beckman"><div class="label">OP17-027 Beckman</div></div>
-  </div>
-  <p><strong>Win condition:</strong> Rest your Characters with Red-Haired Pirates support, then freeze the important one with the Leader so it stays rested. Closes with 10-cost Shanks (OP17-022) that rests everything, sets 2 DON!! active, and has Rush.</p>
-  <p><strong>Effect KO:</strong> No. Laboon optional.</p>
-  <p><strong>Key turn:</strong> 10-cost Shanks hits and rests the board. Yasopp (or similar) can then restand it or another body.</p>
-  <p><strong>Disrupt:</strong> Rest or freeze Yasopp before he can restand the 10c. Do not leave multiple active bodies — he can rest one and freeze the other.</p>
-  <p><strong>Your plan:</strong> The 10c Shanks is the closer, but Yasopp is the enabler. If Yasopp is still active when the 10c lands, he can restand it (and himself). Prioritize resting or freezing Yasopp first. Once the 10c is rested and stays rested, you can trade into it.</p>
-  <h3>Priority targets</h3>
-  <ol class="priority">
-    <li><strong>Yasopp (OP17-031)</strong> — rests a body and can restand himself and the 10c Shanks. This is the card that turns one rested 10c into a second swing.</li>
-    <li><strong>10-cost Shanks (OP17-022)</strong> — rests everything, sets 2 DON!! active, Rush. Once it is active and Yasopp is live, the game is usually over.</li>
-    <li>Benn Beckman (OP17-027) — rests two Characters on play. Sets up the freeze.</li>
-    <li>Any other body that can rest your Characters or restand the 10c.</li>
-  </ol>
-  <div class="swing"><strong>Swing note:</strong> A 14k Leader swing into a rested 12k Shanks still fails if he has counters. You need the 10c (or Yasopp) rested and frozen before you go for the closer. A failed swing into the 10c leaves it active for his next turn.</div>
-  <div class="note"><strong>Yasopp reminder:</strong> In the game log, Yasopp restood both himself and the 10c Shanks after the first swing. That is the line that ends the game. Rest or freeze Yasopp before the 10c can be restood.</div>
-</div>
-
-<!-- Yellow Enel -->
-<div class="matchup">
-  <h2>Yellow Enel</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP05-098" alt="Yellow Enel"><div class="label">OP05-098 Enel</div></div>
-  </div>
-  <p><strong>Win condition:</strong> Leader restores a Life when it hits 0 (once per turn). Builds a board of Trigger and Sky Island bodies and stalls until it can close with high-power swings.</p>
-  <p><strong>Effect KO:</strong> No. Laboon not required.</p>
-  <p><strong>Key turn:</strong> The turn they hit 0 Life and restore it, or the first big body (Enel, Katakuri) comes down.</p>
-  <p><strong>Disrupt:</strong> Rest the body about to swing. Freeze the biggest one so they cannot chain pressure.</p>
-  <p><strong>Your plan:</strong> Keep taking life even after the restore. Clear rested bodies so they cannot rebuild freely.</p>
-  <h3>Priority targets</h3>
-  <ul class="priority">
-    <li>The 6-cost Enel</li>
-    <li>Ohm, Shura</li>
-    <li>Any Trigger body that just entered</li>
-    <li>The biggest active attacker</li>
-  </ul>
-  <div class="swing"><strong>Swing note:</strong> Most bodies are midrange. Once rested, a 9-cost closer or even a well-pumped midrange swing is usually enough. The 6-cost Enel is the one that needs a real closer.</div>
-</div>
-
-<div class="appendix">
-<!-- Black Yamato -->
-<div class="matchup">
-  <h2>Black Yamato</h2>
-  <div class="card-row">
-    <div><img src="https://optcg-api.arjunbansal-ai.workers.dev/images/OP16-079" alt="Yamato Leader"><div class="label">OP16-079 Yamato</div></div>
-  </div>
-  <p><strong>Win condition:</strong> Fills trash with searchers (Nami, Kin’emon, Robin), then plays Land of Wano characters from trash so they gain Rush from the leader. Core loop is 6-cost Yamato trashing itself to play an 8-cost Yamato with Rush.</p>
-  <p><strong>Effect KO:</strong> Yes. Runs Ground Death (OP14-096). Keep Laboon available once trash is built.</p>
-  <p><strong>Key turn:</strong> 6-cost Yamato hits and plays an 8-cost from trash with Rush.</p>
-  <p><strong>Disrupt:</strong> Rest or freeze the body that just came from the trash before it swings. Clear the rested Rush body the same turn.</p>
-  <p><strong>Your plan:</strong> Take life early. Keep the board small and active. Freeze the body that just came from the trash before it swings, then clear it the same turn. Do not swing the leader while active Wano bodies and cards in trash remain. Keep Laboon + 1 DON available once trash is built.</p>
-  <h3>Priority targets</h3>
-  <ul class="priority">
-    <li>The body just played from trash (Rush)</li>
-    <li>6-cost Yamato (OP16-098)</li>
-    <li>8-cost Yamato (OP16-096 / OP16-097)</li>
-    <li>Kin’emon or Robin after they have already resolved</li>
-  </ul>
-  <div class="swing"><strong>Swing note:</strong> The Rush body is the main threat. Freeze it, then clear it. Ground Death can KO your freeze or blocker; Laboon stops that.</div>
-</div>
-
-  <h2>Appendix: Rough Winning Lines</h2>
-
-  <div class="matchup">
-    <h3>vs Black Imu</h3>
-    <p>Turns 1–2: Play Kid & Killer. Develop. No real life swings yet.<br>
-    Turns 3–4: Attach 1–2 DON!! to Bonney and start taking life. Rest small Celestial Dragons when possible.<br>
-    Turns 5–6: Drop Hody on 7. Clear one body. Rest Ju Peter (or Mars) the moment the Elders come down. Freeze the biggest active Elder with Carrot.<br>
-    Turns 6–7: Drop a 9-cost (Shanks or Zoro). Attack the rested Elder. Keep the most important one rested and race the last life.</p>
+<div class="sidebar">
+  <div>
+    <div class="panel" id="set-aside">
+      <h3>Set Aside</h3>
+      <div id="set-aside-list" style="font-size:0.85em;color:var(--muted);">Click × on a card to set it aside.</div>
+    </div>
+    <div class="panel" style="margin-top:12px;" id="deck-panel">
+      <h3>Deck <span id="deck-count" style="color:var(--gold);">0</span></h3>
+      <div id="deck-list" style="font-size:0.8em;"></div>
+      <button class="secondary" style="margin-top:8px;" onclick="copyDeck()">Copy OPTCGSim</button>
+    </div>
   </div>
 
-  <div class="matchup">
-    <h3>vs Purple Enel</h3>
-    <p>Early: Take life and rest the body that just received the 4 DON!!.<br>
-    Mid: Freeze the 6-cost Enel. Clear the pumped body the same turn.<br>
-    Late: Do not leave a 10k+ attacker active. Drop Hody or a 9-cost to finish before they can chain another dump.</p>
-  </div>
+  <div id="cards"></div>
 
-  <div class="matchup">
-    <h3>vs Rocks</h3>
-    <p>Early: Clear Kyo (draw + protection) and Stussy (locks your attackers).<br>
-    Mid: Freeze or clear Shiki before he can −3000 you. Then Newgate so face swings stick.<br>
-    Late: Do not swing a closer into Shiki unless you are already above his −3000 + counter. Clear the board first, then go face. The 10-cost Rocks On Play is already done once the extra characters are on board.</p>
-  </div>
-
-  <div class="matchup">
-    <h3>vs Ace</h3>
-    <p>Rest the body about to attack (especially Newgate or a Rush body). Freeze Marco or Newgate. Clear the rested body immediately so they do not get a free second swing.</p>
-  </div>
-
-  <div class="matchup">
-    <h3>vs Sabo</h3>
-    <p>Rest the cost-8+ body before it swings. Freeze Dragon or the big Sabo. Keep the high-cost body rested so the leader buff does not produce free swings.</p>
-  </div>
-
-  <div class="matchup">
-    <h3>vs Kaido</h3>
-    <p>Rest the Kaido that just came down. Freeze the one about to swing. Kill the rested one. Do not let the second Kaido come down for free.</p>
-  </div>
-
-  <div class="matchup">
-    <h3>vs Boa Hancock</h3>
-    <p>Rest the active 5000+ body about to swing (or the one that just triggered). Freeze the biggest one. Clear the rested body so she does not get free value from the KO.</p>
-  </div>
-
-  <div class="matchup">
-    <h3>vs Black Elbaph Luffy</h3>
-    <p>Rest the Giant that just became a blocker. Freeze Loki or the big Luffy. Kill the rested Giant. Do not let them keep a wall of blockers while the cheap attackers swing.</p>
-  </div>
-
-  <div class="matchup">
-    <h3>vs Luffy & Ace</h3>
-    <p>Rest the biggest active attacker. Freeze the one about to go. Clear one body per turn so they cannot chain multiple swings.</p>
-  </div>
-
-  <div class="matchup">
-    <h3>vs Pudding</h3>
-    <p>Rest the big Charlotte (Linlin / Katakuri) before it swings. Freeze the one about to attack. Clear the rested body the same turn. Do not let the ramp + heal stabilize.</p>
-  </div>
-
-  <div class="matchup">
-    <h3>vs Nico Robin</h3>
-    <p>Take life before the top-end arrives. Rest the highest-cost body that just came down. Freeze the biggest one. Clear the rested high-cost body immediately so the Banish + ramp does not snowball.</p>
-  </div>
-
-  <div class="matchup">
-    <h3>vs Green Shanks</h3>
-    <p>Do not leave multiple bodies rested for them to lock. Rest Beckman or the 10-cost Shanks before they can fully lock you. Freeze the biggest active body. Trade aggressively once you have a closer.</p>
-  </div>
-
-  <div class="matchup">
-    <h3>vs Yellow Enel</h3>
-    <p>Keep taking life even after the restore. Rest the body about to swing. Freeze the biggest one. Clear rested bodies so they cannot rebuild freely after the Life restore.</p>
+  <div class="panel" id="types-panel">
+    <h3>Types in View</h3>
+    <div id="types-list"></div>
   </div>
 </div>
 
-<p class="small" style="margin-top: 30px; text-align: center;">Images from official Bandai card list. For personal reference only. Swing numbers are practical heuristics based on typical counter density (~8–12 +2000 counters per deck).</p>
-
-
-<div id="modal" class="modal" onclick="closeModal()">
-  <span class="modal-close">&times;</span>
-  <img id="modal-img" src="">
+<div class="modal" id="modal" onclick="closeModal()">
+  <img id="modal-img" src="" alt="">
 </div>
+
 <script>
-function openModal(src) {
-  document.getElementById('modal-img').src = src;
-  document.getElementById('modal').classList.add('open');
-}
-function closeModal() {
-  document.getElementById('modal').classList.remove('open');
-}
-// Make all card images clickable
-document.querySelectorAll('.card-row img').forEach(img => {
-  img.addEventListener('click', () => openModal(img.src));
-});
-</script>
+let allCards = [];
+let setAside = new Set();
+let deck = [];
+let activeBlocks = new Set();
+let activeColors = new Set();
+let activeCats = new Set();
+let activeTags = new Set();
+let sortKey = '';
 
+async function load() {
+  const res = await fetch('data/cards.csv');
+  const text = await res.text();
+  const lines = text.split('\n').slice(1).filter(l => l.trim());
+  const parsed = lines.map(parseCSVLine).filter(c => c && c.id);
+  const byBase = {};
+  parsed.forEach(c => {
+    const base = c.id.replace(/_p\d+$/, '');
+    if (!byBase[base] || !c.id.includes('_p')) byBase[base] = c;
+  });
+  allCards = Object.values(byBase);
+  render();
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '', inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') inQuotes = !inQuotes;
+    else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+    else current += ch;
+  }
+  result.push(current);
+  if (result.length < 12) return null;
+  return {
+    id: result[0], name: result[1], category: result[2], colors: result[3],
+    cost: result[4], power: result[5], counter: result[6], effect: result[7],
+    tags: result[8] || '', blockIcon: result[9] || '', imageUrl: result[10],
+    types: result[11] || ''
+  };
+}
+
+function visibleCards() {
+  const search = document.getElementById('search').value.toLowerCase();
+  return allCards.filter(c => {
+    if (setAside.has(c.id)) return false;
+    if (activeBlocks.size && !activeBlocks.has(c.blockIcon)) return false;
+    const colors = (c.colors || '').split('|');
+    if (activeColors.size && !colors.some(col => activeColors.has(col))) return false;
+    if (activeCats.size && !activeCats.has((c.category || '').toUpperCase())) return false;
+    const tags = (c.tags || '').split(',').filter(Boolean);
+    const eff = (c.effect || '').toLowerCase();
+    if (activeTags.size && ![...activeTags].every(t => {
+      if (t === 'ON_KO') return eff.includes('on k.o.');
+      if (t === 'ADD_DON') return eff.includes('don!! deck') && (eff.includes('add') || eff.includes('set it as active'));
+      if (t === 'ADD_LIFE') return eff.includes('life cards') && eff.includes('add');
+      return tags.includes(t);
+    })) return false;
+    if (search && !(c.id + c.name + c.effect).toLowerCase().includes(search)) return false;
+    return true;
+  });
+}
+
+function render() {
+  let cards = visibleCards();
+  if (sortKey) {
+    cards.sort((a, b) => {
+      const av = parseFloat(a[sortKey]) || 0;
+      const bv = parseFloat(b[sortKey]) || 0;
+      return bv - av;
+    });
+  }
+  const container = document.getElementById('cards');
+  container.innerHTML = '';
+  cards.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.dataset.id = c.id;
+    const tags = (c.tags || '').split(',').filter(Boolean);
+    const imgSrc = `https://optcg-api.arjunbansal-ai.workers.dev/images/${c.id}`;
+    div.innerHTML = `
+      <img class="thumb" src="${imgSrc}" alt="${c.name}" onclick="openModal('${imgSrc}')">
+      <div class="card-body">
+        <div class="card-header">
+          <div>
+            <span class="card-id">${c.id}</span>
+            <span class="card-name">${c.name}</span>
+            <span class="block-badge">B${c.blockIcon || '?'}</span>
+          </div>
+          <div class="card-actions">
+            <button onclick="this.closest('.card').classList.toggle('minimized')">−</button>
+            <button onclick="setAsideCard('${c.id}')">×</button>
+            <button onclick="addToDeck('${c.id}')">+Deck</button>
+          </div>
+        </div>
+        <div class="meta">${c.category || ''} · ${c.cost || '?'}c · ${c.power || '?'} · ${c.counter || '—'} · ${c.colors}</div>
+        <div class="badges">${tags.map(t => `<span class="badge">${t}</span>`).join('')}</div>
+        <div class="card-text">${c.effect || ''}</div>
+      </div>`;
+    container.appendChild(div);
+  });
+  renderSetAside();
+  renderDeck();
+  renderTypes(cards);
+}
+
+function setAsideCard(id) {
+  setAside.add(id);
+  render();
+}
+function restoreCard(id) {
+  setAside.delete(id);
+  render();
+}
+function renderSetAside() {
+  const el = document.getElementById('set-aside-list');
+  if (!setAside.size) { el.innerHTML = '<div style="color:var(--muted);">None</div>'; return; }
+  el.innerHTML = [...setAside].map(id => {
+    const c = allCards.find(x => x.id === id);
+    if (!c) return '';
+    return `<div class="side-item" onclick="restoreCard('${id}')">${c.id} · ${c.name} · ${c.cost || '?'}c · ${c.colors}</div>`;
+  }).join('');
+}
+
+function addToDeck(id) {
+  const existing = deck.find(d => d.id === id);
+  if (existing) existing.qty = Math.min(4, existing.qty + 1);
+  else deck.push({ id, qty: 1 });
+  renderDeck();
+}
+function renderDeck() {
+  document.getElementById('deck-count').textContent = deck.reduce((s, d) => s + d.qty, 0);
+  document.getElementById('deck-list').innerHTML = deck.map(d => {
+    const c = allCards.find(x => x.id === d.id);
+    return `<div class="side-item">${d.qty}x ${d.id} ${c ? c.name : ''}</div>`;
+  }).join('') || '<div style="color:var(--muted);">Empty</div>';
+}
+function copyDeck() {
+  const text = deck.map(d => `${d.qty}x${d.id}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => alert('Copied ' + deck.length + ' unique cards'));
+}
+
+function renderTypes(cards) {
+  const counts = {};
+  cards.forEach(c => {
+    (c.types || '').split('|').filter(Boolean).forEach(t => {
+      counts[t] = (counts[t] || 0) + 1;
+    });
+  });
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  document.getElementById('types-list').innerHTML = sorted.slice(0, 40).map(([t, n]) =>
+    `<div class="type-row"><span>${t}</span><span class="type-count">${n}</span></div>`
+  ).join('') || '<div style="color:var(--muted);">None</div>';
+}
+
+function toggleBlock(btn, b) { btn.classList.toggle('active'); if (activeBlocks.has(b)) activeBlocks.delete(b); else activeBlocks.add(b); render(); }
+function toggleColor(btn, c) { btn.classList.toggle('active'); if (activeColors.has(c)) activeColors.delete(c); else activeColors.add(c); render(); }
+function toggleCat(btn, c) { btn.classList.toggle('active'); if (activeCats.has(c)) activeCats.delete(c); else activeCats.add(c); render(); }
+function toggleTag(btn, t) { btn.classList.toggle('active'); if (activeTags.has(t)) activeTags.delete(t); else activeTags.add(t); render(); }
+function clearBlocks() { activeBlocks.clear(); document.querySelectorAll('#block-filter button').forEach(b => b.classList.remove('active')); render(); }
+function clearColors() { activeColors.clear(); document.querySelectorAll('#color-filter button').forEach(b => b.classList.remove('active')); render(); }
+function clearCats() { activeCats.clear(); document.querySelectorAll('#cat-filter button').forEach(b => b.classList.remove('active')); render(); }
+function clearTags() { activeTags.clear(); document.querySelectorAll('#tag-filter button').forEach(b => b.classList.remove('active')); render(); }
+function clearSearch() { document.getElementById('search').value = ''; render(); }
+function setSort(k) { sortKey = k; render(); }
+function openModal(src) { document.getElementById('modal-img').src = src; document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+load();
+</script>
 </body>
 </html>

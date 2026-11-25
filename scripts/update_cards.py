@@ -87,10 +87,11 @@ def main():
 
     with open("data/cards.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["id","name","category","colors","cost","power","counter","effect","tags","blockIcon","imageUrl"])
+        w.writerow(["id","name","category","colors","cost","power","counter","effect","tags","blockIcon","imageUrl","types"])
         for cid, c in sorted(by_id.items()):
             colors = "|".join(c.get("color") or [])
             effect = (c.get("effect") or "").replace("\n", " ").replace("\r", " ")
+            types = "|".join(c.get("feature") or [])
             w.writerow([
                 cid,
                 c.get("name") or "",
@@ -102,7 +103,8 @@ def main():
                 effect,
                 extract_tags(effect, c.get("counter"), c.get("cardClass")),
                 c.get("blockIcon") or "",
-                c.get("imageUrl") or ""
+                c.get("imageUrl") or "",
+                types
             ])
     print(f"Wrote {len(by_id)} cards to data/cards.csv")
 
