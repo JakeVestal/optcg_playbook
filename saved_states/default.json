@@ -1,0 +1,24 @@
+{
+  "setAside": [],
+  "deck": [],
+  "activeBlocks": [
+    "2",
+    "3",
+    "4",
+    "5",
+    "X"
+  ],
+  "activeColors": [
+    "Green",
+    "Purple"
+  ],
+  "activeCats": [
+    "CHARACTER",
+    "EVENT",
+    "STAGE"
+  ],
+  "activeTags": [],
+  "activeTypes": [],
+  "sortKey": "",
+  "search": ""
+}
