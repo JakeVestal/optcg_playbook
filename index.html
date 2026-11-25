@@ -43,7 +43,13 @@ button {
   padding: 6px 12px; border-radius: 16px; cursor: pointer; font-size: 0.85em;
 }
 button:hover { background: #243049; }
-button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.active {
+  background: #1e3a2f;
+  border-color: #3fb950;
+  color: #3fb950;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.55);
+  transform: translateY(1px);
+}
 button.secondary { background: #2a3650; }
 
 .sidebar {
@@ -240,6 +246,8 @@ async function load() {
   window.cardVariants = variants;
   render();
   refreshTypesList();
+  // auto-load saved 'default' state if it exists
+  loadDefaultState();
 }
 
 function parseCSVLine(line) {
@@ -479,6 +487,18 @@ async function saveState() {
   if (!password) return;
   const name = prompt("State name (letters, numbers, _ -):", "default");
   if (!name) return;
+
+  // check if it already exists
+  try {
+    const check = await fetch(WORKER + "?name=" + encodeURIComponent(name));
+    if (check.ok) {
+      const proceed = confirm("A state named '" + name + "' already exists. Overwrite it?");
+      if (!proceed) return;
+    }
+  } catch (e) {
+    // ignore check errors and proceed
+  }
+
   const state = collectState();
   try {
     const res = await fetch(WORKER, {
@@ -549,6 +569,18 @@ function viewAltArts() {
 
 function closeAltModal() {
   document.getElementById('alt-modal').classList.remove('open');
+}
+
+
+async function loadDefaultState() {
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/JakeVestal/optcg_playbook/main/saved_states/default.json');
+    if (!res.ok) return;
+    const state = await res.json();
+    applyState(state);
+  } catch (e) {
+    console.warn('default state load failed', e);
+  }
 }
 
 </script>
