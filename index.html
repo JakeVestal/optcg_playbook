@@ -181,6 +181,10 @@ button.secondary { background: #2a3650; }
       <h3>Deck <span id="deck-count" style="color:var(--gold);">0</span></h3>
       <div id="deck-list" style="font-size:0.8em;"></div>
       <button class="secondary" style="margin-top:8px;" onclick="copyDeck()">Copy OPTCGSim</button>
+      <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
+        <button class="secondary" onclick="saveState()">Save State</button>
+        <button class="secondary" onclick="loadState()">Load State</button>
+      </div>
     </div>
   </div>
 
@@ -366,6 +370,77 @@ function openModal(src) { document.getElementById('modal-img').src = src; docume
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
 
 load();
+
+const WORKER = "https://optcg-state.46jwnf9v56.workers.dev";
+
+function collectState() {
+  return {
+    setAside: [...setAside],
+    deck,
+    activeBlocks: [...activeBlocks],
+    activeColors: [...activeColors],
+    activeCats: [...activeCats],
+    activeTags: [...activeTags],
+    sortKey,
+    search: document.getElementById('search')?.value || ''
+  };
+}
+
+function applyState(s) {
+  if (!s) return;
+  setAside = new Set(s.setAside || []);
+  deck = s.deck || [];
+  activeBlocks = new Set(s.activeBlocks || []);
+  activeColors = new Set(s.activeColors || []);
+  activeCats = new Set(s.activeCats || []);
+  activeTags = new Set(s.activeTags || []);
+  sortKey = s.sortKey || '';
+  if (document.getElementById('search')) document.getElementById('search').value = s.search || '';
+  // refresh button active classes
+  document.querySelectorAll('#block-filter button').forEach(b => b.classList.toggle('active', activeBlocks.has(b.textContent.trim())));
+  document.querySelectorAll('#color-filter button').forEach(b => b.classList.toggle('active', activeColors.has(b.textContent.trim())));
+  document.querySelectorAll('#cat-filter button').forEach(b => b.classList.toggle('active', activeCats.has(b.textContent.trim())));
+  document.querySelectorAll('#tag-filter button').forEach(b => b.classList.toggle('active', activeTags.has(b.textContent.trim())));
+  render();
+}
+
+async function saveState() {
+  const password = prompt("Password:");
+  if (!password) return;
+  const name = prompt("State name (letters, numbers, _ -):", "default");
+  if (!name) return;
+  const state = collectState();
+  try {
+    const res = await fetch(WORKER, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password, name, state })
+    });
+    const data = await res.json();
+    if (res.ok) alert("Saved as " + data.name);
+    else alert("Save failed: " + (data.error || res.status));
+  } catch (e) {
+    alert("Save error: " + e.message);
+  }
+}
+
+async function loadState() {
+  const password = prompt("Password:");
+  if (!password) return;
+  const name = prompt("State name to load:", "default");
+  if (!name) return;
+  try {
+    const res = await fetch(WORKER + "?name=" + encodeURIComponent(name) + "&password=" + encodeURIComponent(password));
+    const data = await res.json();
+    if (res.ok) {
+      applyState(data.state);
+      alert("Loaded " + data.name);
+    } else alert("Load failed: " + (data.error || res.status));
+  } catch (e) {
+    alert("Load error: " + e.message);
+  }
+}
+
 </script>
 </body>
 </html>
