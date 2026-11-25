@@ -9,9 +9,12 @@
     "X"
   ],
   "activeColors": [],
-  "activeCats": [],
+  "activeCats": [
+    "CHARACTER",
+    "EVENT",
+    "STAGE"
+  ],
   "activeTags": [],
-  "activeTypes": [],
   "sortKey": "",
   "search": ""
 }
