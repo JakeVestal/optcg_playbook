@@ -98,7 +98,9 @@ button.secondary { background: #2a3650; }
   cursor: pointer;
 }
 .side-item:hover { background: #1e2a42; }
-.type-row { display: flex; justify-content: space-between; font-size: 0.8em; padding: 2px 0; }
+.type-row { display: flex; justify-content: space-between; font-size: 0.8em; padding: 4px 2px; cursor: pointer; border-radius: 4px; }
+.type-row:hover { background: #1e2a42; }
+.type-row.selected { background: #2a3a2a; border: 1px solid #3fb950; }
 .type-count { color: var(--gold); }
 
 .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
@@ -385,9 +387,8 @@ function refreshTypesList() {
   });
   const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   document.getElementById('types-list').innerHTML = sorted.slice(0, 40).map(([t, n]) => {
-    const checked = activeTypes.has(t) ? 'checked' : '';
-    const active = activeTypes.has(t) ? ' style="background:#2a3a2a; border-color:#3fb950;"' : '';
-    return `<div class="type-row"${active} onclick="toggleType('${t.replace(/'/g, "\\'")}')"><span>${t}</span><span class="type-count">${n}</span></div>`;
+    const selected = activeTypes.has(t) ? ' selected' : '';
+    return `<div class="type-row${selected}" data-type="${t.replace(/"/g, '"')}"><span>${t}</span><span class="type-count">${n}</span></div>`;
   }).join('') || '<div style="color:var(--muted);">None</div>';
 }
 
@@ -415,22 +416,22 @@ function visibleCardsWithoutTypeFilter() {
 function toggleType(t) {
   if (activeTypes.has(t)) activeTypes.delete(t);
   else activeTypes.add(t);
-  render(); // cards update, types list stays
-  // re-highlight the row without rebuilding the list
-  const rows = document.querySelectorAll('#types-list .type-row');
-  rows.forEach(row => {
-    const name = row.querySelector('span')?.textContent;
-    if (name === t) {
-      if (activeTypes.has(t)) {
-        row.style.background = '#2a3a2a';
-        row.style.borderColor = '#3fb950';
-      } else {
-        row.style.background = '';
-        row.style.borderColor = '';
-      }
-    }
+  render();
+  // update visual state of all rows without rebuilding
+  document.querySelectorAll('#types-list .type-row').forEach(row => {
+    const name = row.dataset.type;
+    if (activeTypes.has(name)) row.classList.add('selected');
+    else row.classList.remove('selected');
   });
 }
+
+// Event delegation for type rows
+document.addEventListener('click', function(e) {
+  const row = e.target.closest('#types-list .type-row');
+  if (row && row.dataset.type) {
+    toggleType(row.dataset.type);
+  }
+});
 
 function toggleBlock(btn, b) { btn.classList.toggle('active'); if (activeBlocks.has(b)) activeBlocks.delete(b); else activeBlocks.add(b); render(); refreshTypesList(); }
 function toggleColor(btn, c) { btn.classList.toggle('active'); if (activeColors.has(c)) activeColors.delete(c); else activeColors.add(c); render(); refreshTypesList(); }
