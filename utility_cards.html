@@ -85,6 +85,8 @@ Loads from <code>data/cards.csv</code> (updated nightly from optcgjson). Click t
   <button onclick="toggleTag(this, 'ADD_LIFE')">Add Life</button>
   <button onclick="toggleCategory(this, 'STAGE')">Stages</button>
   <button onclick="toggleCategory(this, 'EVENT')">Events</button>
+  <button onclick="toggleCategory(this, 'LEADER')">Leaders</button>
+  <button onclick="toggleCategory(this, 'CHARACTER')">Characters</button>
   <button class="secondary" onclick="clearTags()">Remove Tag Filters</button>
   <button class="secondary" onclick="copyVisible()">Copy visible to OPTCGSim</button>
 </div>
@@ -106,11 +108,14 @@ async function load() {
   const res = await fetch('data/cards.csv');
   const text = await res.text();
   const lines = text.split('\n').slice(1).filter(l => l.trim());
-  allCards = lines.map(line => {
-    const cols = line.split(','); // simple; real CSV may need better parsing
-    // Better: use a proper split that respects quotes
-    return parseCSVLine(line);
-  }).filter(c => c && c.id);
+  allCards = lines.map(line => parseCSVLine(line)).filter(c => c && c.id);
+  // Deduplicate: one entry per base card number (prefer non-parallel)
+  const byBase = {};
+  allCards.forEach(c => {
+    const base = c.id.replace(/_p\d+$/, '');
+    if (!byBase[base] || !c.id.includes('_p')) byBase[base] = c;
+  });
+  allCards = Object.values(byBase);
   render();
 }
 
