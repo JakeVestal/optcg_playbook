@@ -83,6 +83,79 @@ def pdf_to_text(pdf_path):
         raise RuntimeError(f"pdftotext failed: {result.stderr}")
     return result.stdout
 
+
+def generate_rules_html():
+    """Generate rules.html from the stored comprehensive rules text. Faithful copy."""
+    if not RULES_TXT.exists():
+        print("No rules text to generate HTML from")
+        return
+    rules_text = RULES_TXT.read_text(encoding="utf-8")
+    log_text = RULES_LOG.read_text(encoding="utf-8") if RULES_LOG.exists() else "(no changes logged)"
+
+    # Escape HTML
+    def esc(s):
+        return s.replace("&", "&").replace("<", "<").replace(">", ">")
+
+    # Split into lines and build HTML body
+    lines = rules_text.splitlines()
+    body_parts = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            body_parts.append("<br>")
+            continue
+        # Detect top-level section headers like "1. Game Overview" or "10. Keyword Effects"
+        if re.match(r"^\d+\.\s+\S", stripped) and len(stripped) < 80:
+            body_parts.append(f'<h2>{esc(stripped)}</h2>')
+        # Detect subsection like "1-1. Number of Players"
+        elif re.match(r"^\d+-\d+\.\s+\S", stripped) and len(stripped) < 80:
+            body_parts.append(f'<h3>{esc(stripped)}</h3>')
+        # Detect deeper like "1-1-1. Fundamentally..."
+        elif re.match(r"^\d+-\d+-\d+\.", stripped):
+            body_parts.append(f'<p class="rule">{esc(stripped)}</p>')
+        else:
+            body_parts.append(f'<p>{esc(stripped)}</p>')
+
+    body = "\n".join(body_parts)
+    log_escaped = esc(log_text).replace("\n", "<br>")
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One Piece TCG Comprehensive Rules</title>
+<style>
+:root {{ --bg:#0f1419; --card:#1a2332; --text:#e6edf3; --muted:#8b949e; --accent:#3fb950; --border:#30363d; }}
+body {{ font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); margin:0; padding:16px; max-width:900px; margin:auto; line-height:1.55; }}
+h1 {{ color:#58a6ff; margin:0 0 8px; }}
+h2 {{ color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:4px; margin:28px 0 10px; }}
+h3 {{ color:#58a6ff; margin:18px 0 6px; font-size:1.05em; }}
+p {{ margin:6px 0; }}
+p.rule {{ margin-left:18px; }}
+.nav {{ margin:8px 0 16px; }}
+.nav a {{ color:#58a6ff; margin-right:12px; text-decoration:none; }}
+.nav a:hover {{ text-decoration:underline; }}
+.changelog {{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 16px; margin:24px 0; font-family:monospace; font-size:0.9em; white-space:pre-wrap; }}
+.note {{ color:var(--muted); font-size:0.9em; margin-bottom:16px; }}
+</style>
+</head>
+<body>
+<h1>One Piece TCG Comprehensive Rules</h1>
+<p class="note">Official rules text, displayed as stored from the Bandai Comprehensive Rules PDF. Formatting is for readability only; wording is unchanged.</p>
+<p class="nav"><a href="index.html">← Utility Cards</a> <a href="playbook.html">Bonney</a> <a href="playbooks/zoro.html">Zoro</a> <a href="playbooks/brook.html">Brook</a> <a href="playbooks/franky.html">Franky</a> <a href="playbooks/karoo.html">Karoo</a></p>
+{body}
+<div class="changelog">
+<strong>Rule changes log</strong><br>
+{log_escaped}
+</div>
+<p class="nav"><a href="index.html">← Utility Cards</a> <a href="playbook.html">Bonney</a> <a href="playbooks/zoro.html">Zoro</a> <a href="playbooks/brook.html">Brook</a> <a href="playbooks/franky.html">Franky</a> <a href="playbooks/karoo.html">Karoo</a></p>
+</body>
+</html>
+"""
+    Path("rules.html").write_text(html, encoding="utf-8")
+    print("Wrote rules.html")
+
 def update_rules():
     """Download latest Comprehensive Rules, convert to text, log if changed."""
     RULES_DIR.mkdir(parents=True, exist_ok=True)
@@ -106,8 +179,10 @@ def update_rules():
             with open(RULES_LOG, "a", encoding="utf-8") as f:
                 f.write(log_entry)
             print(f"Rules changed: {old_hash} -> {new_hash}")
+            generate_rules_html()
         else:
             print("Rules unchanged")
+            generate_rules_html()
     except Exception as e:
         print(f"Rules update failed: {e}")
 
