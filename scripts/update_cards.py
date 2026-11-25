@@ -34,6 +34,10 @@ def extract_tags(effect, counter, category):
         t.add("DOUBLE_ATTACK")
     if "on k.o." in e or "[on k.o.]" in e:
         t.add("ON_KO")
+    if "don!! deck" in e and ("add" in e or "set it as active" in e):
+        t.add("ADD_DON")
+    if "life cards" in e and "add" in e:
+        t.add("ADD_LIFE")
     if category and category.upper() == "STAGE":
         t.add("STAGE")
     if category and category.upper() == "EVENT":

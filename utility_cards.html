@@ -81,6 +81,8 @@ Loads from <code>data/cards.csv</code> (updated nightly from optcgjson). Click t
   <button onclick="toggleTag(this, 'COUNTER2000')">+2000</button>
   <button onclick="toggleTag(this, 'COUNTER1000')">+1000</button>
   <button onclick="toggleTag(this, 'ON_KO')">ON K.O.</button>
+  <button onclick="toggleTag(this, 'ADD_DON')">Add DON!!</button>
+  <button onclick="toggleTag(this, 'ADD_LIFE')">Add Life</button>
   <button onclick="toggleCategory(this, 'STAGE')">Stages</button>
   <button onclick="toggleCategory(this, 'EVENT')">Events</button>
   <button class="secondary" onclick="clearTags()">Remove Tag Filters</button>
@@ -148,7 +150,10 @@ function render() {
     const tags = (c.tags || '').split(',').filter(Boolean);
     const colorMatch = activeColors.size === 0 || colors.some(col => activeColors.has(col));
     const tagMatch = activeTags.size === 0 || [...activeTags].every(t => {
-      if (t === 'ON_KO') return (c.effect || '').toLowerCase().includes('on k.o.');
+      const eff = (c.effect || '').toLowerCase();
+      if (t === 'ON_KO') return eff.includes('on k.o.');
+      if (t === 'ADD_DON') return eff.includes('don!! deck') && (eff.includes('add') || eff.includes('set it as active'));
+      if (t === 'ADD_LIFE') return eff.includes('life cards') && eff.includes('add');
       return tags.includes(t);
     });
     const catMatch = activeCategories.size === 0 || activeCategories.has((c.category || '').toUpperCase());
