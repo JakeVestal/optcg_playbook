@@ -1,0 +1,4 @@
+.mcp.json
+.idea/workspace.xml
+*.csv.tmp
+__pycache__/

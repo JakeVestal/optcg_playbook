@@ -96,13 +96,22 @@ button.secondary { background: #2a3650; }
 .side-item {
   font-size: 0.8em; padding: 4px 0; border-bottom: 1px solid var(--border);
   cursor: pointer;
-}
+}cl
 .side-item:hover { background: #1e2a42; }
 .type-row { display: flex; justify-content: space-between; font-size: 0.8em; padding: 4px 2px; cursor: pointer; border-radius: 4px; }
 .type-row:hover { background: #1e2a42; }
 .type-row.selected { background: #2a3a2a; border: 1px solid #3fb950; }
 .type-count { color: var(--gold); }
 
+.warnings { margin: 6px 0; font-size: 0.78em; color: var(--gold); }
+.warnings div::before { content: "⚠ "; }
+.warnings.ok { color: #3fb950; }
+.warnings.ok div::before { content: "✓ "; }
+.list-row { display: flex; align-items: center; gap: 4px; font-size: 0.8em; padding: 3px 0; border-bottom: 1px solid var(--border); }
+.list-row .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-row button { padding: 1px 6px; font-size: 0.85em; border-radius: 8px; }
+.leader-row { color: var(--gold); font-weight: 600; }
+textarea.shop { width: 100%; min-height: 220px; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-family: ui-monospace, monospace; font-size: 0.85em; }
 .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
 .modal.open { display: flex; }
 .modal img { max-width: 90%; max-height: 90%; border-radius: 8px; }
@@ -111,7 +120,7 @@ button.secondary { background: #2a3650; }
 <body>
 <h1>OPTCG Utility Cards</h1>
 <p class="subtitle">
-  <a href="playbook.html">Bonney</a> ·
+  <a href="playbooks/bonney.html">Bonney</a> ·
   <a href="playbooks/zoro.html">Zoro</a> ·
   <a href="playbooks/brook.html">Brook</a> ·
   <a href="playbooks/franky.html">Franky</a> ·
@@ -187,13 +196,26 @@ button.secondary { background: #2a3650; }
       <div id="set-aside-list" style="font-size:0.85em;color:var(--muted);">Click × on a card to set it aside.</div>
     </div>
     <div class="panel" style="margin-top:12px;" id="deck-panel">
-      <h3>Deck <span id="deck-count" style="color:var(--gold);">0</span> <span style="font-size:0.75em;color:var(--muted);">(click to remove)</span></h3>
+      <h3>Deck <span id="deck-count" style="color:var(--gold);">0</span>/50 <span style="font-size:0.75em;color:var(--muted);">(click to remove)</span></h3>
+      <div id="deck-warnings" class="warnings"></div>
       <div id="deck-list" style="font-size:0.8em;"></div>
       <button class="secondary" style="margin-top:8px;" onclick="copyDeck()">Copy OPTCGSim</button>
       <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
         <button class="secondary" onclick="saveState()">Save State</button>
         <button class="secondary" onclick="loadState()">Load State</button>
         <button class="secondary" onclick="viewAltArts()">View Alt Art</button>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:12px;" id="table-panel">
+      <h3>Table <span id="table-count" style="color:var(--gold);">0</span> <span style="font-size:0.75em;color:var(--muted);">(cards you're considering)</span></h3>
+      <div id="table-list"></div>
+    </div>
+    <div class="panel" style="margin-top:12px;" id="owned-panel">
+      <h3>Collection <span id="owned-count" style="color:var(--gold);">0</span> <span style="font-size:0.75em;color:var(--muted);">(cards you own)</span></h3>
+      <div id="owned-list"></div>
+      <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
+        <button class="secondary" onclick="openShoppingList(false)">Shopping list: Deck</button>
+        <button class="secondary" onclick="openShoppingList(true)">Shopping list: Deck + Table</button>
       </div>
     </div>
   </div>
@@ -213,7 +235,7 @@ button.secondary { background: #2a3650; }
 </div>
 
 <div class="modal" id="alt-modal" onclick="closeAltModal()" style="overflow-y:auto; align-items:flex-start; padding-top:40px;">
-  <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; max-width:900px; width:90%;" onclick="event.stopPropagation()">
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; max-width:900px; width:90%;" onclick="event.stopPropagation()">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
       <h3 style="margin:0; color:var(--accent);">Alt Arts in Deck</h3>
       <button onclick="closeAltModal()" style="background:transparent; border:1px solid var(--border); color:var(--text); padding:4px 10px; border-radius:6px; cursor:pointer;">Close</button>
@@ -222,8 +244,28 @@ button.secondary { background: #2a3650; }
   </div>
 </div>
 
+<div class="modal" id="shop-modal" onclick="closeShop()" style="overflow-y:auto; align-items:flex-start; padding-top:40px;">
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; max-width:700px; width:90%;" onclick="event.stopPropagation()">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h3 style="margin:0; color:var(--gold);" id="shop-title">Shopping list</h3>
+      <button onclick="closeShop()">Close</button>
+    </div>
+    <p class="meta" id="shop-summary"></p>
+    <p class="meta">TCGplayer Mass Entry format (<code>quantity name</code>, one per line). Copy it, open Mass Entry, and paste.</p>
+    <textarea class="shop" id="shop-text" readonly></textarea>
+    <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+      <button onclick="copyShop()">Copy</button>
+      <a href="https://www.tcgplayer.com/massentry?productline=One%20Piece%20Card%20Game" target="_blank" rel="noopener"><button>Open TCGplayer Mass Entry</button></a>
+    </div>
+    <p class="meta" style="margin-top:12px;">With card numbers (for reference):</p>
+    <textarea class="shop" id="shop-ref" readonly style="min-height:120px;"></textarea>
+  </div>
+</div>
+
 <script>
 let allCards = [];
+let table = [];   // [{id, qty}] cards being considered for the deck
+let owned = [];   // [{id, qty}] cards the user owns
 let setAside = new Set();
 let deck = [];
 let activeBlocks = new Set();
@@ -236,76 +278,101 @@ let sortKey = '';
 async function load() {
   const res = await fetch('data/cards.csv');
   const text = await res.text();
-  const lines = text.split('\n').slice(1).filter(l => l.trim());
-  const parsed = lines.map(parseCSVLine).filter(c => c && c.id);
+  const parsed = parseCSV(text).slice(1).map(rowToCard).filter(c => c && c.id);
   const byBase = {};
   const variants = {};
   parsed.forEach(c => {
     const base = c.id.replace(/_[pr]\d+$/, '');
     if (!variants[base]) variants[base] = [];
     variants[base].push(c);
-    // prefer the plain base id over any _p or _r variant
-    if (!byBase[base] || !/_[pr]\d+$/.test(c.id)) byBase[base] = c;
+    // prefer the plain base id; otherwise the lowest-numbered variant (e.g. _p1 over _p2)
+    const cur = byBase[base];
+    const isBase = !/_[pr]\d+$/.test(c.id);
+    const curIsBase = cur && !/_[pr]\d+$/.test(cur.id);
+    if (!cur || isBase || (!curIsBase && c.id.localeCompare(cur.id, undefined, { numeric: true }) < 0)) byBase[base] = c;
   });
   allCards = Object.values(byBase);
   window.cardVariants = variants;
-  render();
-  refreshTypesList();
-  // auto-load saved 'default' state if it exists
-  loadDefaultState();
+  // apply the saved 'default' state (if any) BEFORE the first render, so it never
+  // overwrites filters the user has already started clicking
+  const applied = await loadDefaultState();
+  if (!applied) { render(); refreshTypesList(); }
 }
 
-function parseCSVLine(line) {
-  line = line.replace(/\r$/, '');
-  const result = [];
-  let current = '', inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') inQuotes = !inQuotes;
-    else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
-    else current += ch;
+// RFC 4180 CSV parser: handles quoted fields, "" escaped quotes, CRLF and newlines in quotes.
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += ch;
+    } else if (ch === '"') inQuotes = true;
+    else if (ch === ',') { row.push(field.trim()); field = ''; }
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      row.push(field.trim()); field = '';
+      if (row.some(f => f !== '')) rows.push(row);
+      row = [];
+    } else field += ch;
   }
-  result.push(current.trim());
-  if (result.length < 12) return null;
+  row.push(field.trim());
+  if (row.some(f => f !== '')) rows.push(row);
+  return rows;
+}
+
+// HTML-escape text before putting it in innerHTML (card text contains <Slash>, <Strike>, quotes, etc.)
+function esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function rowToCard(result) {
+  if (!result || result.length < 12) return null;
   return {
     id: result[0], name: result[1], category: result[2], colors: result[3],
     cost: result[4], power: result[5], counter: result[6], effect: result[7],
     tags: result[8] || '', blockIcon: result[9] || '', imageUrl: result[10],
-    types: result[11] || ''
+    types: result[11] || '',
+    life: result[12] || '', trigger: result[13] || '', attribute: result[14] || '',
+    rarity: result[15] || '', source: result[16] || ''
   };
 }
 
-function visibleCards() {
+// Tag checks come straight from the CSV `tags` column (computed by scripts/update_cards.py)
+// so the page and the data never disagree.
+function passesFilters(c, { ignoreTypes = false } = {}) {
   const search = document.getElementById('search').value.toLowerCase();
-  return allCards.filter(c => {
-    if (setAside.has(c.id)) return false;
-    if (activeBlocks.size && !activeBlocks.has(c.blockIcon)) return false;
-    const colors = (c.colors || '').split('|');
-    if (activeColors.size && !colors.some(col => activeColors.has(col))) return false;
-    if (activeCats.size && !activeCats.has((c.category || '').toUpperCase())) return false;
-    const tags = (c.tags || '').split(',').filter(Boolean);
-    const eff = (c.effect || '').toLowerCase();
-    if (activeTags.size && ![...activeTags].every(t => {
-      if (t === 'ON_KO') return eff.includes('on k.o.');
-      if (t === 'ADD_DON') return eff.includes('don!! deck') && (eff.includes('add') || eff.includes('set it as active'));
-      if (t === 'ADD_LIFE') return eff.includes('life cards') && eff.includes('add');
-      return tags.includes(t);
-    })) return false;
-    if (search && !(c.id + c.name + c.effect).toLowerCase().includes(search)) return false;
-    if (activeTypes.size) {
-      const cardTypes = (c.types || '').split('|').map(t => t.trim()).filter(Boolean);
-      if (!cardTypes.some(t => activeTypes.has(t))) return false;
-    }
-    return true;
-  });
+  if (setAside.has(c.id)) return false;
+  if (activeBlocks.size && !activeBlocks.has(c.blockIcon)) return false;
+  const colors = (c.colors || '').split('|');
+  if (activeColors.size && !colors.some(col => activeColors.has(col))) return false;
+  if (activeCats.size && !activeCats.has((c.category || '').toUpperCase())) return false;
+  const tags = (c.tags || '').split(',').filter(Boolean);
+  if (activeTags.size && ![...activeTags].every(t => tags.includes(t))) return false;
+  if (search && !(c.id + ' ' + c.name + ' ' + c.effect + ' ' + c.trigger).toLowerCase().includes(search)) return false;
+  if (!ignoreTypes && activeTypes.size) {
+    const cardTypes = (c.types || '').split('|').map(t => t.trim()).filter(Boolean);
+    if (!cardTypes.some(t => activeTypes.has(t))) return false;
+  }
+  return true;
 }
+
+function visibleCards() { return allCards.filter(c => passesFilters(c)); }
+function visibleCardsWithoutTypeFilter() { return allCards.filter(c => passesFilters(c, { ignoreTypes: true })); }
 
 function render() {
   let cards = visibleCards();
   if (sortKey) {
     cards.sort((a, b) => {
-      const av = parseFloat(a[sortKey]) || 0;
-      const bv = parseFloat(b[sortKey]) || 0;
+      const av = parseFloat(a[sortKey]);
+      const bv = parseFloat(b[sortKey]);
+      if (isNaN(av) && isNaN(bv)) return 0;
+      if (isNaN(av)) return 1;   // cards without a value sort last
+      if (isNaN(bv)) return -1;
       return bv - av;
     });
   }
@@ -318,28 +385,32 @@ function render() {
     const tags = (c.tags || '').split(',').filter(Boolean);
     const imgSrc = `https://optcg-api.arjunbansal-ai.workers.dev/images/${c.id}`;
     div.innerHTML = `
-      <img class="thumb" src="${imgSrc}" alt="${c.name}" onclick="openModal('${imgSrc}')">
+      <img class="thumb" src="${imgSrc}" alt="${esc(c.name)}" onclick="openModal('${imgSrc}')">
       <div class="card-body">
         <div class="card-header">
           <div>
-            <span class="card-id">${c.id}</span>
-            <span class="card-name">${c.name}</span>
-            <span class="block-badge">B${c.blockIcon || '?'}</span>
+            <span class="card-id">${esc(c.id)}</span>
+            <span class="card-name">${esc(c.name)}</span>
+            <span class="block-badge">B${esc(c.blockIcon || '?')}</span>
           </div>
           <div class="card-actions">
             <button onclick="this.closest('.card').classList.toggle('minimized')">−</button>
             <button onclick="setAsideCard('${c.id}')">×</button>
-            <button onclick="addToDeck('${c.id}')">+Deck</button>
+            <button onclick="addToDeck('${c.id}')" title="Add to deck">+Deck</button>
+            <button onclick="addToTable('${c.id}')" title="Put on the table (considering)">+Table</button>
+            <button onclick="addOwned('${c.id}')" title="Record one owned copy">+Own</button>
           </div>
         </div>
-        <div class="meta">${c.category || ''} · ${c.cost || '?'}c · ${c.power || '?'} · ${c.counter || '—'} · ${c.colors}</div>
-        <div class="badges">${tags.map(t => `<span class="badge">${t}</span>`).join('')}</div>
-        <div class="card-text">${c.effect || ''}</div>
+        <div class="meta">${esc(c.category)} · ${esc(c.cost || '?')}c · ${esc(c.power || '?')} · ${esc(c.counter || '—')} · ${esc(c.colors)}</div>
+        <div class="badges">${tags.map(t => `<span class="badge">${esc(t)}</span>`).join('')}</div>
+        <div class="card-text">${esc(c.effect)}${c.trigger ? `<div style="margin-top:4px;color:var(--gold);">${esc(c.trigger)}</div>` : ''}</div>
       </div>`;
     container.appendChild(div);
   });
   renderSetAside();
   renderDeck();
+  renderTable();
+  renderOwned();
   // types list updated only from refreshTypesList()
 }
 
@@ -351,6 +422,7 @@ function setAsideCard(id) {
 function restoreCard(id) {
   setAside.delete(id);
   render();
+  refreshTypesList();
 }
 function renderSetAside() {
   const el = document.getElementById('set-aside-list');
@@ -358,33 +430,132 @@ function renderSetAside() {
   el.innerHTML = [...setAside].map(id => {
     const c = allCards.find(x => x.id === id);
     if (!c) return '';
-    return `<div class="side-item" onclick="restoreCard('${id}')">${c.id} · ${c.name} · ${c.cost || '?'}c · ${c.colors}</div>`;
+    return `<div class="side-item" onclick="restoreCard('${id}')">${esc(c.id)} · ${esc(c.name)} · ${esc(c.cost || '?')}c · ${esc(c.colors)}</div>`;
   }).join('');
 }
 
-function addToDeck(id) {
-  const existing = deck.find(d => d.id === id);
-  if (existing) existing.qty = Math.min(4, existing.qty + 1);
-  else deck.push({ id, qty: 1 });
-  renderDeck();
+const cardById = id => allCards.find(x => x.id === id);
+const baseId = id => id.replace(/_[pr]\d+$/, '');
+const isLeader = c => c && (c.category || '').toUpperCase() === 'LEADER';
+const qtyOf = (list, id) => (list.find(d => d.id === id) || {}).qty || 0;
+
+// Generic +1 / -1 helpers for the deck, table and owned lists.
+function bump(list, id, delta) {
+  const e = list.find(d => d.id === id);
+  if (e) e.qty += delta;
+  else if (delta > 0) list.push({ id, qty: delta });
+  return list.filter(d => d.qty > 0);
 }
-function removeFromDeck(id) {
-  const existing = deck.find(d => d.id === id);
-  if (!existing) return;
-  existing.qty -= 1;
-  if (existing.qty <= 0) deck = deck.filter(d => d.id !== id);
-  renderDeck();
+
+// Tournament rules are WARNINGS only; nothing is ever blocked.
+function addToDeck(id) { deck = bump(deck, id, 1); renderDeck(); }
+function removeFromDeck(id) { deck = bump(deck, id, -1); renderDeck(); }
+function addToTable(id) { if (!qtyOf(table, id)) table = bump(table, id, 1); renderTable(); }
+function removeFromTable(id) { table = table.filter(d => d.id !== id); renderTable(); }
+function tableToDeck(id) { addToDeck(id); }
+function addOwned(id) { owned = bump(owned, id, 1); renderOwned(); }
+function removeOwned(id) { owned = bump(owned, id, -1); renderOwned(); }
+
+function deckWarnings() {
+  const w = [];
+  const leaders = deck.filter(d => isLeader(cardById(d.id)));
+  const leaderQty = leaders.reduce((s, d) => s + d.qty, 0);
+  const main = deck.filter(d => !isLeader(cardById(d.id)));
+  const mainQty = main.reduce((s, d) => s + d.qty, 0);
+  if (leaderQty === 0) w.push('No Leader: a deck needs exactly 1 Leader card.');
+  else if (leaderQty > 1) w.push(`${leaderQty} Leader cards: a deck needs exactly 1.`);
+  if (mainQty !== 50) w.push(`Main deck has ${mainQty} cards: it must be exactly 50 (Leader not counted).`);
+  // max 4 copies per card number (alt arts share the same card number)
+  const perBase = {};
+  main.forEach(d => { const b = baseId(d.id); perBase[b] = (perBase[b] || 0) + d.qty; });
+  Object.entries(perBase).filter(([, n]) => n > 4).forEach(([b, n]) => w.push(`${b}: ${n} copies (max 4).`));
+  // color identity: every card must share at least one color with the Leader
+  if (leaderQty >= 1) {
+    const leaderColors = new Set(leaders.flatMap(d => (cardById(d.id)?.colors || '').split('|').filter(Boolean)));
+    main.forEach(d => {
+      const c = cardById(d.id);
+      if (!c) return;
+      const cols = (c.colors || '').split('|').filter(Boolean);
+      if (cols.length && !cols.some(col => leaderColors.has(col)))
+        w.push(`${c.id} ${c.name} (${cols.join('/')}) doesn't match the Leader's colors.`);
+    });
+  }
+  return w;
 }
+
+function listRow(label, buttons, cls = '') {
+  return `<div class="list-row ${cls}"><span class="lbl" title="${label}">${label}</span>${buttons}</div>`;
+}
+
 function renderDeck() {
-  document.getElementById('deck-count').textContent = deck.reduce((s, d) => s + d.qty, 0);
-  document.getElementById('deck-list').innerHTML = deck.map(d => {
-    const c = allCards.find(x => x.id === d.id);
-    return `<div class="side-item" onclick="removeFromDeck('${d.id}')" title="Click to remove one">${d.qty}x ${d.id} ${c ? c.name : ''}</div>`;
+  const main = deck.filter(d => !isLeader(cardById(d.id)));
+  document.getElementById('deck-count').textContent = main.reduce((s, d) => s + d.qty, 0);
+  const sorted = [...deck].sort((a, b) => isLeader(cardById(b.id)) - isLeader(cardById(a.id)));
+  document.getElementById('deck-list').innerHTML = sorted.map(d => {
+    const c = cardById(d.id);
+    const lead = isLeader(c);
+    return `<div class="side-item${lead ? ' leader-row' : ''}" onclick="removeFromDeck('${esc(d.id)}')" title="Click to remove one">${lead ? 'Leader: ' : ''}${d.qty}x ${esc(d.id)} ${c ? esc(c.name) : ''}</div>`;
   }).join('') || '<div style="color:var(--muted);">Empty</div>';
+  const w = deckWarnings();
+  const el = document.getElementById('deck-warnings');
+  el.className = 'warnings' + (w.length ? '' : ' ok');
+  el.innerHTML = deck.length ? (w.length ? w.map(x => `<div>${esc(x)}</div>`).join('') : '<div>Tournament legal (1 Leader + 50, ≤4 each, colors match)</div>') : '';
 }
+
+function renderTable() {
+  document.getElementById('table-count').textContent = table.length;
+  document.getElementById('table-list').innerHTML = table.map(d => {
+    const c = cardById(d.id);
+    return listRow(`${esc(d.id)} ${c ? esc(c.name) : ''}`,
+      `<button onclick="tableToDeck('${esc(d.id)}')" title="Add one copy to the deck">+Deck</button><button onclick="removeFromTable('${esc(d.id)}')" title="Remove from table">×</button>`);
+  }).join('') || '<div style="color:var(--muted);font-size:0.8em;">Empty: use +Table on a card</div>';
+}
+
+function renderOwned() {
+  document.getElementById('owned-count').textContent = owned.reduce((s, d) => s + d.qty, 0);
+  document.getElementById('owned-list').innerHTML = [...owned].sort((a, b) => a.id.localeCompare(b.id)).map(d => {
+    const c = cardById(d.id);
+    return listRow(`${d.qty}x ${esc(d.id)} ${c ? esc(c.name) : ''}`,
+      `<button onclick="addOwned('${esc(d.id)}')">+</button><button onclick="removeOwned('${esc(d.id)}')">−</button>`);
+  }).join('') || '<div style="color:var(--muted);font-size:0.8em;">Empty: use +Own on a card</div>';
+}
+
+// Shopping list = wanted − owned, counted per card number (alt arts count as the same card).
+// Table cards count as wanted at the deck maximum (4, or 1 for Leaders) unless already in the deck.
+function shoppingNeeds(includeTable) {
+  const want = {};
+  deck.forEach(d => { const b = baseId(d.id); want[b] = (want[b] || 0) + d.qty; });
+  if (includeTable) table.forEach(d => {
+    const b = baseId(d.id);
+    const max = isLeader(cardById(d.id)) ? 1 : 4;
+    want[b] = Math.max(want[b] || 0, max);
+  });
+  const have = {};
+  owned.forEach(d => { const b = baseId(d.id); have[b] = (have[b] || 0) + d.qty; });
+  return Object.entries(want)
+    .map(([b, n]) => ({ id: b, need: n - (have[b] || 0), card: cardById(b) || (window.cardVariants?.[b] || [])[0] }))
+    .filter(x => x.need > 0)
+    .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+function openShoppingList(includeTable) {
+  const needs = shoppingNeeds(includeTable);
+  document.getElementById('shop-title').textContent = 'Shopping list: ' + (includeTable ? 'Deck + Table' : 'Deck');
+  document.getElementById('shop-summary').textContent = needs.length
+    ? `${needs.reduce((s, x) => s + x.need, 0)} cards to buy across ${needs.length} card numbers.`
+    : 'You already own everything on this list.';
+  document.getElementById('shop-text').value = needs.map(x => `${x.need} ${x.card ? x.card.name : x.id}`).join('\n');
+  document.getElementById('shop-ref').value = needs.map(x => `${x.need}x ${x.id} ${x.card ? x.card.name : ''}`).join('\n');
+  document.getElementById('shop-modal').classList.add('open');
+}
+function closeShop() { document.getElementById('shop-modal').classList.remove('open'); }
+function copyShop() { navigator.clipboard.writeText(document.getElementById('shop-text').value).then(() => alert('Copied')); }
+
 function copyDeck() {
-  const text = deck.map(d => `${d.qty}x${d.id}`).join('\n');
-  navigator.clipboard.writeText(text).then(() => alert('Copied ' + deck.length + ' unique cards'));
+  // leader first, as OPTCGSim expects
+  const sorted = [...deck].sort((a, b) => isLeader(cardById(b.id)) - isLeader(cardById(a.id)));
+  const text = sorted.map(d => `${d.qty}x${d.id}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => alert('Copied ' + deck.reduce((s, d) => s + d.qty, 0) + ' cards (' + deck.length + ' unique)'));
 }
 
 function refreshTypesList() {
@@ -412,29 +583,8 @@ function refreshTypesList() {
   });
   document.getElementById('types-list').innerHTML = sorted.map(([t, n]) => {
     const selected = activeTypes.has(t) ? ' selected' : '';
-    return `<div class="type-row${selected}" data-type="${t}"><span>${t}</span><span class="type-count">${n}</span></div>`;
+    return `<div class="type-row${selected}" data-type="${esc(t)}"><span>${esc(t)}</span><span class="type-count">${n}</span></div>`;
   }).join('') || '<div style="color:var(--muted);">None</div>';
-}
-
-function visibleCardsWithoutTypeFilter() {
-  const search = document.getElementById('search').value.toLowerCase();
-  return allCards.filter(c => {
-    if (setAside.has(c.id)) return false;
-    if (activeBlocks.size && !activeBlocks.has(c.blockIcon)) return false;
-    const colors = (c.colors || '').split('|');
-    if (activeColors.size && !colors.some(col => activeColors.has(col))) return false;
-    if (activeCats.size && !activeCats.has((c.category || '').toUpperCase())) return false;
-    const tags = (c.tags || '').split(',').filter(Boolean);
-    const eff = (c.effect || '').toLowerCase();
-    if (activeTags.size && ![...activeTags].every(t => {
-      if (t === 'ON_KO') return eff.includes('on k.o.');
-      if (t === 'ADD_DON') return eff.includes('don!! deck') && (eff.includes('add') || eff.includes('set it as active'));
-      if (t === 'ADD_LIFE') return eff.includes('life cards') && eff.includes('add');
-      return tags.includes(t);
-    })) return false;
-    if (search && !(c.id + c.name + c.effect).toLowerCase().includes(search)) return false;
-    return true;
-  });
 }
 
 function toggleType(t) {
@@ -473,6 +623,8 @@ function collectState() {
   return {
     setAside: [...setAside],
     deck,
+    table,
+    owned,
     activeBlocks: [...activeBlocks],
     activeColors: [...activeColors],
     activeCats: [...activeCats],
@@ -486,6 +638,8 @@ function applyState(s) {
   if (!s) return;
   setAside = new Set(s.setAside || []);
   deck = s.deck || [];
+  table = s.table || [];
+  owned = s.owned || [];
   activeBlocks = new Set(s.activeBlocks || []);
   activeColors = new Set(s.activeColors || []);
   activeCats = new Set(s.activeCats || []);
@@ -509,31 +663,39 @@ function applyState(s) {
   refreshTypesList();
 }
 
+// All calls are POST so the password never goes in a URL. If the Worker is still the old
+// version (it answers 400 to actions it doesn't know), fall back to its old GET API.
+async function workerCall(body) {
+  const res = await fetch(WORKER, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  let data = {};
+  try { data = await res.json(); } catch (e) { /* non-JSON error body */ }
+  return { res, data };
+}
+
 async function saveState() {
   const password = prompt("Password:");
   if (!password) return;
   const name = prompt("State name (letters, numbers, _ -):", "default");
   if (!name) return;
 
-  // check if it already exists
   try {
-    const check = await fetch(WORKER + "?name=" + encodeURIComponent(name));
-    if (check.ok) {
-      const proceed = confirm("A state named '" + name + "' already exists. Overwrite it?");
-      if (!proceed) return;
-    }
+    let { res, data } = await workerCall({ action: "exists", password, name });
+    let exists = res.ok && data.exists;
+    if (res.status === 400) {               // old Worker: no "exists" action
+      const check = await fetch(WORKER + "?name=" + encodeURIComponent(name));
+      exists = check.ok;
+    } else if (res.status === 401) { alert("Save failed: bad password"); return; }
+    if (exists && !confirm("A state named '" + name + "' already exists. Overwrite it?")) return;
   } catch (e) {
     // ignore check errors and proceed
   }
 
-  const state = collectState();
   try {
-    const res = await fetch(WORKER, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password, name, state })
-    });
-    const data = await res.json();
+    const { res, data } = await workerCall({ action: "save", password, name, state: collectState() });
     if (res.ok) alert("Saved as " + data.name);
     else alert("Save failed: " + (data.error || res.status));
   } catch (e) {
@@ -547,8 +709,11 @@ async function loadState() {
   const name = prompt("State name to load:", "default");
   if (!name) return;
   try {
-    const res = await fetch(WORKER + "?name=" + encodeURIComponent(name) + "&password=" + encodeURIComponent(password));
-    const data = await res.json();
+    let { res, data } = await workerCall({ action: "load", password, name });
+    if (res.status === 400) {               // old Worker: no "load" action
+      res = await fetch(WORKER + "?name=" + encodeURIComponent(name));
+      data = await res.json();
+    }
     if (res.ok) {
       applyState(data.state);
       alert("Loaded " + data.name);
@@ -575,7 +740,7 @@ function viewAltArts() {
     any = true;
     const group = document.createElement('div');
     group.style.cssText = 'flex:1 1 200px; background:#161b22; border:1px solid var(--border); border-radius:8px; padding:8px;';
-    group.innerHTML = `<div style="font-size:0.85em; margin-bottom:6px; color:var(--muted);">${base} · ${vars[0]?.name || ''}</div>`;
+    group.innerHTML = `<div style="font-size:0.85em; margin-bottom:6px; color:var(--muted);">${esc(base)} · ${esc(vars[0]?.name || '')}</div>`;
     const imgs = document.createElement('div');
     imgs.style.cssText = 'display:flex; flex-wrap:wrap; gap:6px;';
     alts.forEach(a => {
@@ -601,12 +766,14 @@ function closeAltModal() {
 
 async function loadDefaultState() {
   try {
-    const res = await fetch('https://raw.githubusercontent.com/JakeVestal/optcg_playbook/main/saved_states/default.json');
-    if (!res.ok) return;
+    const res = await fetch('saved_states/default.json', { cache: 'no-cache' });
+    if (!res.ok) return false;
     const state = await res.json();
     applyState(state);
+    return true;
   } catch (e) {
     console.warn('default state load failed', e);
+    return false;
   }
 }
 

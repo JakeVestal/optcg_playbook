@@ -1,0 +1,2 @@
+# Card changes log
+[2026-11-28 17:18 UTC] SOURCE MIGRATION: switched primary source from hugoprudente/optcgjson to the official en.onepiece-cardgame.com card list (+32 P- promos supplemented from optcgjson). 5184 -> 5150 rows: +351 added (alt arts missing upstream), -385 removed (alt-art/reprint ids that the official list numbers differently), imageUrl now points at en.onepiece-cardgame.com, "(Parallel)" name suffix dropped, new columns life/trigger/attribute/rarity/source.

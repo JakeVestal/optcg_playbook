@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Pull latest cards from optcgjson and write data/cards.csv with utility tags."""
-import json, csv, urllib.request, os, re, hashlib, subprocess, datetime
+"""Nightly sync: official card list -> data/cards.csv (optcgjson as fallback), then official rules."""
+import json, csv, urllib.request, os, re, hashlib, subprocess, datetime, sys, time
+import html as html_lib
 from pathlib import Path
 
 OUTPUT_URL = "https://raw.githubusercontent.com/hugoprudente/optcgjson/main/output/"
@@ -94,7 +95,7 @@ def generate_rules_html():
 
     # Escape HTML
     def esc(s):
-        return s.replace("&", "&").replace("<", "<").replace(">", ">")
+        return html_lib.escape(s, quote=False)
 
     # Split into lines and build HTML body
     lines = rules_text.splitlines()
@@ -143,13 +144,13 @@ p.rule {{ margin-left:18px; }}
 <body>
 <h1>One Piece TCG Comprehensive Rules</h1>
 <p class="note">Official rules text, displayed as stored from the Bandai Comprehensive Rules PDF. Formatting is for readability only; wording is unchanged.</p>
-<p class="nav"><a href="index.html">← Utility Cards</a> <a href="playbook.html">Bonney</a> <a href="playbooks/zoro.html">Zoro</a> <a href="playbooks/brook.html">Brook</a> <a href="playbooks/franky.html">Franky</a> <a href="playbooks/karoo.html">Karoo</a></p>
+<p class="nav"><a href="index.html">← Utility Cards</a> <a href="playbooks/bonney.html">Bonney</a> <a href="playbooks/zoro.html">Zoro</a> <a href="playbooks/brook.html">Brook</a> <a href="playbooks/franky.html">Franky</a> <a href="playbooks/karoo.html">Karoo</a></p>
 {body}
 <div class="changelog">
 <strong>Rule changes log</strong><br>
 {log_escaped}
 </div>
-<p class="nav"><a href="index.html">← Utility Cards</a> <a href="playbook.html">Bonney</a> <a href="playbooks/zoro.html">Zoro</a> <a href="playbooks/brook.html">Brook</a> <a href="playbooks/franky.html">Franky</a> <a href="playbooks/karoo.html">Karoo</a></p>
+<p class="nav"><a href="index.html">← Utility Cards</a> <a href="playbooks/bonney.html">Bonney</a> <a href="playbooks/zoro.html">Zoro</a> <a href="playbooks/brook.html">Brook</a> <a href="playbooks/franky.html">Franky</a> <a href="playbooks/karoo.html">Karoo</a></p>
 </body>
 </html>
 """
@@ -165,8 +166,9 @@ def update_rules():
         req = urllib.request.Request(pdf_url, headers={"User-Agent": "optcg-playbook-bot/1.0"})
         with urllib.request.urlopen(req, timeout=60) as r:
             pdf_bytes = r.read()
-        # Write PDF
-        RULES_PDF.write_bytes(pdf_bytes)
+        # Only rewrite the PDF when its bytes actually changed
+        if not RULES_PDF.exists() or RULES_PDF.read_bytes() != pdf_bytes:
+            RULES_PDF.write_bytes(pdf_bytes)
         # Convert to text
         text = pdf_to_text(RULES_PDF)
         new_hash = hashlib.sha256(text.encode()).hexdigest()[:12]
@@ -174,7 +176,7 @@ def update_rules():
         old_hash = hashlib.sha256(old_text.encode()).hexdigest()[:12] if old_text else "none"
         if text != old_text:
             RULES_TXT.write_text(text, encoding="utf-8")
-            now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+            now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
             log_entry = f"[{now}] Rules updated. old={old_hash} new={new_hash} url={pdf_url}\n"
             with open(RULES_LOG, "a", encoding="utf-8") as f:
                 f.write(log_entry)
@@ -185,64 +187,248 @@ def update_rules():
             generate_rules_html()
     except Exception as e:
         print(f"Rules update failed: {e}")
+        return False
+    return True
 
-def main():
-    os.makedirs("data", exist_ok=True)
-    all_cards = []
-    # Try AllSets first
+OFFICIAL_BASE = "https://en.onepiece-cardgame.com"
+OFFICIAL_CARDLIST = OFFICIAL_BASE + "/cardlist/"
+UA = {"User-Agent": "Mozilla/5.0 (compatible; optcg-playbook-bot/1.0; nightly card list sync)"}
+
+
+def http_get(url, timeout=60, tries=3):
+    last = None
+    for attempt in range(tries):
+        try:
+            req = urllib.request.Request(url, headers=UA)
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read().decode("utf-8", errors="replace")
+        except Exception as e:
+            last = e
+            time.sleep(3 * (attempt + 1))
+    raise last
+
+
+def _clean(fragment):
+    """Strip tags / collapse whitespace / unescape entities in an HTML fragment."""
+    text = re.sub(r"<br\s*/?>", " ", fragment or "")
+    text = re.sub(r"<[^>]+>", "", text)
+    text = html_lib.unescape(text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _field(block, cls):
+    m = re.search(r'<div class="%s">\s*<h3>.*?</h3>(.*?)</div>' % cls, block, re.S)
+    return _clean(m.group(1)) if m else ""
+
+
+def _dash(v):
+    return "" if v in ("-", "") else v
+
+
+def parse_official_page(page):
+    """Yield one normalized card dict per <dl class="modalCol"> on an official card list page."""
+    for cid, block in re.findall(r'<dl class="modalCol" id="([^"]+)">(.*?)</dl>', page, re.S):
+        info = re.findall(r"<span>(.*?)</span>", re.search(r'<div class="infoCol">(.*?)</div>', block, re.S).group(1))
+        rarity = _clean(info[1]) if len(info) > 1 else ""
+        category = _clean(info[2]).upper() if len(info) > 2 else ""
+        name_m = re.search(r'<div class="cardName">(.*?)</div>', block, re.S)
+        cost_m = re.search(r'<div class="cost">\s*<h3>(.*?)</h3>(.*?)</div>', block, re.S)
+        cost = life = ""
+        if cost_m:
+            if "life" in cost_m.group(1).lower():
+                life = _dash(_clean(cost_m.group(2)))
+            else:
+                cost = _dash(_clean(cost_m.group(2)))
+        attrs = re.findall(r'<div class="attrIcon">.*?<i>(.*?)</i>', block, re.S)
+        effect = _field(block, "text")
+        trigger = _field(block, "trigger")
+        yield {
+            "id": cid,
+            "name": _clean(name_m.group(1)) if name_m else "",
+            "category": category,
+            "colors": "|".join(c.strip() for c in _field(block, "color").split("/") if c.strip()),
+            "cost": cost,
+            "power": _dash(_field(block, "power")),
+            "counter": _dash(_field(block, "counter")),
+            "effect": "" if effect == "-" else effect,
+            "blockIcon": _dash(_field(block, "block")),
+            "imageUrl": f"{OFFICIAL_BASE}/images/cardlist/card/{cid}.png",
+            "types": "|".join(t.strip() for t in _field(block, "feature").split("/") if t.strip()),
+            "life": life,
+            "trigger": "" if trigger == "-" else trigger,
+            "attribute": "|".join(_clean(a) for a in attrs),
+            "rarity": rarity,
+        }
+
+
+def fetch_official():
+    """Scrape every series on the official English card list. Returns {id: card}."""
+    index = http_get(OFFICIAL_CARDLIST)
+    select = re.search(r'<select[^>]*name="series".*?</select>', index, re.S)
+    series = sorted(set(re.findall(r'<option value="(\d+)"', select.group(0) if select else index)))
+    print(f"Official: {len(series)} series")
+    if not series:
+        raise RuntimeError("no series found on official card list page")
+    cards, failed = {}, []
+    for sid in series:
+        try:
+            page = http_get(f"{OFFICIAL_CARDLIST}?series={sid}")
+            n = 0
+            for c in parse_official_page(page):
+                cards.setdefault(c["id"], c)
+                n += 1
+            if n == 0:
+                failed.append(sid)
+        except Exception as e:
+            print(f"  series {sid}: failed ({e})")
+            failed.append(sid)
+        time.sleep(1)  # be polite to the official site
+    if failed:
+        # A partially-scraped list is not "complete"; let main() decide to fall back.
+        raise RuntimeError(f"{len(failed)} series failed or were empty: {failed}")
+    print(f"Official: {len(cards)} cards")
+    return cards
+
+
+def fetch_optcgjson():
+    """Fallback source: community dataset hugoprudente/optcgjson. Returns {id: card}."""
+    raw = []
     try:
         data = fetch_set("AllSets")
-        # AllSets structure may differ; fall back to individual if needed
         if isinstance(data, dict) and "data" in data:
             for set_data in data["data"].values() if isinstance(data["data"], dict) else [data["data"]]:
                 if isinstance(set_data, dict) and "cards" in set_data:
-                    all_cards.extend(set_data["cards"])
-        print(f"AllSets: {len(all_cards)} cards")
+                    raw.extend(set_data["cards"])
+        print(f"optcgjson AllSets: {len(raw)} cards")
     except Exception as e:
-        print(f"AllSets failed ({e}), falling back to individual sets")
-        sets = ["OP01","OP02","OP03","OP04","OP05","OP06","OP07","OP08","OP09","OP10",
-                "OP11","OP12","OP13","OP14","OP15","OP16","OP17","EB01","EB02","EB03","EB04","EB05",
-                "ST01","ST02","ST03","ST04","ST05","ST06","ST07","ST08","ST09","ST10",
-                "ST11","ST12","ST13","ST14","ST15","ST16","ST17","ST18","ST19","ST20",
-                "ST21","ST22","ST23","ST24","ST25","ST26","ST27","ST28","ST29","ST30",
-                "PRB01","PRB02"]
+        print(f"optcgjson AllSets failed ({e})")
+    if not raw:
+        sets = ([f"OP{n:02d}" for n in range(1, 31)] + [f"EB{n:02d}" for n in range(1, 11)]
+                + [f"ST{n:02d}" for n in range(1, 51)] + [f"PRB{n:02d}" for n in range(1, 6)] + ["P"])
         for s in sets:
             try:
-                d = fetch_set(s)
-                all_cards.extend(d["data"]["cards"])
-            except Exception:
-                pass
-
-    # Deduplicate by id
-    by_id = {}
-    for c in all_cards:
+                raw.extend(fetch_set(s)["data"]["cards"])
+            except Exception as e:
+                print(f"  set {s}: skipped ({e})")
+    cards = {}
+    for c in raw:
         cid = c.get("id") or c.get("number")
-        if cid:
-            by_id[cid] = c
+        if not cid:
+            continue
+        cards[cid] = {
+            "id": cid,
+            "name": c.get("name") or "",
+            "category": (c.get("cardClass") or "").upper(),
+            "colors": "|".join(c.get("color") or []),
+            "cost": str(c.get("cost") or ""),
+            "power": str(c.get("power") or ""),
+            "counter": str(c.get("counter") or ""),
+            "effect": (c.get("effect") or "").replace("\n", " ").replace("\r", " "),
+            "blockIcon": str(c.get("blockIcon") or ""),
+            "imageUrl": c.get("imageUrl") or "",
+            "types": "|".join(c.get("feature") or []),
+            "life": "", "trigger": "", "attribute": "", "rarity": "",
+        }
+    return cards
 
-    with open("data/cards.csv", "w", newline="", encoding="utf-8") as f:
+
+def main():
+    os.makedirs("data", exist_ok=True)
+    source = "official"
+    try:
+        by_id = fetch_official()
+        for c in by_id.values():
+            c["source"] = "official"
+        # Supplement: some cards (mostly P- promos) exist only in the community dataset.
+        # Only *base* ids are merged; alt-art suffixes (_p/_r) are numbered differently
+        # upstream and would create duplicates.
+        try:
+            extra = {cid: c for cid, c in fetch_optcgjson().items()
+                     if "_" not in cid and cid not in by_id}
+            for c in extra.values():
+                c["source"] = "optcgjson"
+            by_id.update(extra)
+            print(f"Supplemented {len(extra)} base cards from optcgjson")
+        except Exception as e:
+            print(f"optcgjson supplement skipped ({e})")
+    except Exception as e:
+        print(f"Official card list failed ({e}); falling back to optcgjson")
+        by_id, source = fetch_optcgjson(), "optcgjson"
+        for c in by_id.values():
+            c["source"] = "optcgjson"
+
+    # Safety guard: never replace a good CSV with an empty or badly shrunk one.
+    old_rows = {}
+    if CARDS_CSV.exists():
+        with open(CARDS_CSV, newline="", encoding="utf-8") as f:
+            old_rows = {r["id"]: r for r in csv.DictReader(f)}
+    if not by_id:
+        print("ERROR: fetched 0 cards; refusing to overwrite data/cards.csv")
+        update_rules()
+        return 1
+    if old_rows and len(by_id) < len(old_rows) * MIN_KEEP_RATIO:
+        print(f"ERROR: fetched {len(by_id)} cards vs {len(old_rows)} existing "
+              f"(< {MIN_KEEP_RATIO:.0%}); refusing to overwrite data/cards.csv")
+        update_rules()
+        return 1
+
+    tmp = CARDS_CSV.with_suffix(".csv.tmp")
+    with open(tmp, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["id","name","category","colors","cost","power","counter","effect","tags","blockIcon","imageUrl","types"])
+        w.writerow(CSV_FIELDS)
         for cid, c in sorted(by_id.items()):
-            colors = "|".join(c.get("color") or [])
-            effect = (c.get("effect") or "").replace("\n", " ").replace("\r", " ")
-            types = "|".join(c.get("feature") or [])
-            w.writerow([
-                cid,
-                c.get("name") or "",
-                c.get("cardClass") or "",
-                colors,
-                c.get("cost") or "",
-                c.get("power") or "",
-                c.get("counter") or "",
-                effect,
-                extract_tags(effect, c.get("counter"), c.get("cardClass")),
-                c.get("blockIcon") or "",
-                c.get("imageUrl") or "",
-                types
-            ])
-    print(f"Wrote {len(by_id)} cards to data/cards.csv")
-    update_rules()
+            c["tags"] = extract_tags(c["effect"] + " " + c["trigger"], c["counter"], c["category"])
+            w.writerow([c.get(k, "") for k in CSV_FIELDS])
+    with open(tmp, newline="", encoding="utf-8") as f:
+        new_rows = {r["id"]: r for r in csv.DictReader(f)}
+    os.replace(tmp, CARDS_CSV)
+    print(f"Wrote {len(by_id)} cards to data/cards.csv (source: {source})")
+    log_card_changes(old_rows, new_rows)
+
+    rules_ok = update_rules()
+    # Falling back to the community source still counts as a failure worth noticing.
+    return 0 if (rules_ok and source == "official") else 1
+
+
+CARDS_CSV = Path("data/cards.csv")
+CARD_LOG = Path("data/card-changes-log.txt")
+# Columns 1-12 are the original layout (index.html reads them by position); new columns are appended.
+CSV_FIELDS = ["id","name","category","colors","cost","power","counter","effect","tags","blockIcon","imageUrl","types",
+              "life","trigger","attribute","rarity","source"]
+MIN_KEEP_RATIO = 0.95
+
+
+def log_card_changes(old_rows, new_rows):
+    """Append a summary of added / removed / changed cards to data/card-changes-log.txt."""
+    if not old_rows:
+        return
+    added = sorted(set(new_rows) - set(old_rows))
+    removed = sorted(set(old_rows) - set(new_rows))
+    changed = []
+    for cid in sorted(set(old_rows) & set(new_rows)):
+        diffs = [k for k in CSV_FIELDS
+                 if k in old_rows[cid]  # columns added later are not "changes"
+                 and (old_rows[cid].get(k) or "") != (new_rows[cid].get(k) or "")]
+        if diffs:
+            changed.append(f"{cid} ({', '.join(diffs)})")
+    if not (added or removed or changed):
+        print("Cards unchanged")
+        return
+    now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    lines = [f"[{now}] +{len(added)} added, -{len(removed)} removed, ~{len(changed)} changed"]
+    if added:
+        lines.append("  added: " + ", ".join(added))
+    if removed:
+        lines.append("  removed: " + ", ".join(removed))
+    for ch in changed:
+        lines.append("  changed: " + ch)
+    new_file = not CARD_LOG.exists()
+    with open(CARD_LOG, "a", encoding="utf-8") as f:
+        if new_file:
+            f.write("# Card changes log\n")
+        f.write("\n".join(lines) + "\n")
+    print(lines[0])
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

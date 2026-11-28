@@ -5,6 +5,10 @@ on:
     - cron: '0 6 * * *'  # daily at 06:00 UTC
   workflow_dispatch:
 
+concurrency:
+  group: update-cards
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -19,11 +23,27 @@ jobs:
       - name: Install poppler-utils
         run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - name: Run update script
+        id: update
+        # A failure here (e.g. rules fetch) still lets the commit step save whatever
+        # did succeed; the job is marked failed at the end so it gets noticed.
+        continue-on-error: true
         run: python3 scripts/update_cards.py
       - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/cards.csv data/rules/ rules.html
-          git diff --staged --quiet || git commit -m "chore: update cards.csv and rules from official sources"
-          git push
+          git add data/cards.csv data/card-changes-log.txt data/rules/ rules.html 2>/dev/null || git add data/cards.csv data/rules/ rules.html
+          if git diff --staged --quiet; then
+            echo "No changes"
+          else
+            git commit -m "chore: update cards.csv and rules from official sources"
+            for i in 1 2 3; do
+              git pull --rebase && git push && break
+              sleep 5
+            done
+          fi
+      - name: Fail if update script failed
+        if: steps.update.outcome == 'failure'
+        run: |
+          echo "update_cards.py exited non-zero; see the 'Run update script' log"
+          exit 1
