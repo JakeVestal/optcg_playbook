@@ -102,6 +102,13 @@ button.secondary { background: #2a3650; }
 .type-row:hover { background: #1e2a42; }
 .type-row.selected { background: #2a3a2a; border: 1px solid #3fb950; }
 .type-count { color: var(--gold); }
+/* selected archetypes stay pinned at the top of the scrolling panel */
+.types-pinned {
+  position: sticky; top: -12px; z-index: 1;   /* -12px = panel padding, so it sticks flush to the edge */
+  background: var(--panel); margin: -12px -12px 6px; padding: 12px 12px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.types-pinned:empty { display: none; }
 
 .warnings { margin: 6px 0; font-size: 0.78em; color: var(--gold); }
 .warnings div::before { content: "⚠ "; }
@@ -251,14 +258,13 @@ textarea.shop { width: 100%; min-height: 220px; background: var(--panel-2); colo
       <button onclick="closeShop()">Close</button>
     </div>
     <p class="meta" id="shop-summary"></p>
-    <p class="meta">TCGplayer Mass Entry format (<code>quantity name</code>, one per line). Copy it, open Mass Entry, and paste.</p>
+    <p class="meta">TCGplayer Mass Entry format: <code>4 Franky [OP18] 034</code>. "Send to TCGplayer" opens Mass Entry already filled in; if it shows up empty, use Copy, then Open Mass Entry, and paste.</p>
     <textarea class="shop" id="shop-text" readonly></textarea>
     <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+      <a id="shop-send" href="#" target="_blank" rel="noopener"><button>Send to TCGplayer</button></a>
       <button onclick="copyShop()">Copy</button>
-      <a href="https://www.tcgplayer.com/massentry?productline=One%20Piece%20Card%20Game" target="_blank" rel="noopener"><button>Open TCGplayer Mass Entry</button></a>
+      <a href="https://www.tcgplayer.com/massentry?productline=One%20Piece%20Card%20Game" target="_blank" rel="noopener"><button>Open Mass Entry</button></a>
     </div>
-    <p class="meta" style="margin-top:12px;">With card numbers (for reference):</p>
-    <textarea class="shop" id="shop-ref" readonly style="min-height:120px;"></textarea>
   </div>
 </div>
 
@@ -544,9 +550,17 @@ function openShoppingList(includeTable) {
   document.getElementById('shop-summary').textContent = needs.length
     ? `${needs.reduce((s, x) => s + x.need, 0)} cards to buy across ${needs.length} card numbers.`
     : 'You already own everything on this list.';
-  document.getElementById('shop-text').value = needs.map(x => `${x.need} ${x.card ? x.card.name : x.id}`).join('\n');
-  document.getElementById('shop-ref').value = needs.map(x => `${x.need}x ${x.id} ${x.card ? x.card.name : ''}`).join('\n');
+  const lines = needs.map(x => massEntryLine(x.need, x.id, x.card ? x.card.name : ''));
+  document.getElementById('shop-text').value = lines.join('\n');
+  // Prefilled Mass Entry link: lines joined with "||" in the `c` parameter.
+  document.getElementById('shop-send').href = 'https://www.tcgplayer.com/massentry?productline=' +
+    encodeURIComponent('One Piece Card Game') + '&c=' + encodeURIComponent(lines.join('||'));
   document.getElementById('shop-modal').classList.add('open');
+}
+// "OP18-034" -> "4 Franky [OP18] 034"; promos "P-038" -> "[P] 038"
+function massEntryLine(qty, id, name) {
+  const m = baseId(id).match(/^([A-Z]+\d*)-(\d+)$/);
+  return m ? `${qty} ${name} [${m[1]}] ${m[2]}` : `${qty} ${name}`;
 }
 function closeShop() { document.getElementById('shop-modal').classList.remove('open'); }
 function copyShop() { navigator.clipboard.writeText(document.getElementById('shop-text').value).then(() => alert('Copied')); }
@@ -581,10 +595,14 @@ function refreshTypesList() {
     if (b[1] !== a[1]) return b[1] - a[1];
     return a[0].localeCompare(b[0]);
   });
-  document.getElementById('types-list').innerHTML = sorted.map(([t, n]) => {
+  const row = ([t, n]) => {
     const selected = activeTypes.has(t) ? ' selected' : '';
     return `<div class="type-row${selected}" data-type="${esc(t)}"><span>${esc(t)}</span><span class="type-count">${n}</span></div>`;
-  }).join('') || '<div style="color:var(--muted);">None</div>';
+  };
+  const pinned = sorted.filter(([t]) => activeTypes.has(t)).map(row).join('');
+  const rest = sorted.filter(([t]) => !activeTypes.has(t)).map(row).join('');
+  document.getElementById('types-list').innerHTML =
+    (pinned ? `<div class="types-pinned">${pinned}</div>` : '') + (rest || (pinned ? '' : '<div style="color:var(--muted);">None</div>'));
 }
 
 function toggleType(t) {
