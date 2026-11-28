@@ -148,10 +148,6 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
   <a href="https://github.com/JakeVestal/optcg_playbook" target="_blank">GitHub</a>
 </p>
 
-<div class="toolbar">
-  <input id="search" type="text" placeholder="Search ID, name, or text..." oninput="render(); refreshTypesList()">
-  <button class="secondary" onclick="clearSearch()">Clear</button>
-</div>
 
 <div class="toolbar" id="block-filter">
   <span style="color:var(--muted);font-size:0.85em;">Block:</span>
@@ -239,7 +235,13 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
     </div>
   </div>
 
-  <div id="cards"></div>
+  <div>
+    <div class="toolbar" style="margin-top:0;">
+      <input id="search" type="text" placeholder="Search ID, name, or text..." oninput="render(); refreshTypesList()">
+      <button class="secondary" onclick="clearSearch()">Clear</button>
+    </div>
+    <div id="cards"></div>
+  </div>
 
   <div>
     <h3 style="margin: 0 0 8px; font-size: 0.95em; color: var(--gold);">Archetypes</h3>
