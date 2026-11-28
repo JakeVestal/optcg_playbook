@@ -1,0 +1,92 @@
+{
+  "setAside": [],
+  "deck": [
+    {
+      "id": "OP07-019",
+      "qty": 1
+    },
+    {
+      "id": "EB04-018",
+      "qty": 3
+    },
+    {
+      "id": "OP09-032",
+      "qty": 4
+    },
+    {
+      "id": "EB01-015",
+      "qty": 4
+    },
+    {
+      "id": "OP17-022",
+      "qty": 4
+    },
+    {
+      "id": "PRB02-004",
+      "qty": 4
+    },
+    {
+      "id": "OP17-024",
+      "qty": 2
+    },
+    {
+      "id": "OP08-030",
+      "qty": 4
+    },
+    {
+      "id": "OP07-021",
+      "qty": 4
+    },
+    {
+      "id": "EB01-012",
+      "qty": 2
+    },
+    {
+      "id": "EB02-015",
+      "qty": 2
+    },
+    {
+      "id": "EB03-017",
+      "qty": 2
+    },
+    {
+      "id": "OP07-026",
+      "qty": 2
+    },
+    {
+      "id": "OP12-118",
+      "qty": 2
+    },
+    {
+      "id": "OP10-032",
+      "qty": 4
+    },
+    {
+      "id": "OP17-032",
+      "qty": 4
+    }
+  ],
+  "table": [],
+  "activeBlocks": [
+    "2",
+    "3",
+    "4",
+    "5",
+    "X"
+  ],
+  "activeColors": [
+    "Green"
+  ],
+  "activeCats": [
+    "CHARACTER"
+  ],
+  "activeTags": [],
+  "costFilter": [],
+  "powerFilter": [
+    "1000"
+  ],
+  "counterFilter": [],
+  "hideIn": [],
+  "sortKey": "",
+  "search": ""
+}
