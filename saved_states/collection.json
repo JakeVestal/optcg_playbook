@@ -22,7 +22,185 @@
       "qty": 1
     }
   ],
-  "purchases": [],
-  "orders": [],
-  "updatedAt": "2026-11-28T21:14:58.678Z"
+  "purchases": [
+    {
+      "key": "6c1c12f22ba8329c:712892:0",
+      "order": "6c1c12f22ba8329c",
+      "date": "2026-11-24",
+      "est": "2026-12-10",
+      "id": "OP18-031",
+      "pid": 712892,
+      "qty": 1,
+      "price": 3.21,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "85ad508da5682ef9:712892:0",
+      "order": "85ad508da5682ef9",
+      "date": "2026-11-24",
+      "est": "2026-12-10",
+      "id": "OP18-031",
+      "pid": 712892,
+      "qty": 1,
+      "price": 2,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "883f8f83a2072660:721836:2",
+      "order": "883f8f83a2072660",
+      "date": "2026-11-24",
+      "est": "2026-12-10",
+      "id": "OP18-076",
+      "pid": 721836,
+      "qty": 2,
+      "price": 0.19,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "883f8f83a2072660:723309:0",
+      "order": "883f8f83a2072660",
+      "date": "2026-11-24",
+      "est": "2026-12-10",
+      "id": "OP18-063",
+      "pid": 723309,
+      "qty": 2,
+      "price": 0.1,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "883f8f83a2072660:724626:6",
+      "order": "883f8f83a2072660",
+      "date": "2026-11-24",
+      "est": "2026-12-10",
+      "id": "OP18-077",
+      "pid": 724626,
+      "qty": 3,
+      "price": 0.15,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "883f8f83a2072660:725885:5",
+      "order": "883f8f83a2072660",
+      "date": "2026-11-24",
+      "est": "2026-12-10",
+      "id": "OP18-070",
+      "pid": 725885,
+      "qty": 2,
+      "price": 0.11,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "883f8f83a2072660:729862:4",
+      "order": "883f8f83a2072660",
+      "date": "2026-11-24",
+      "est": "2026-12-10",
+      "id": "OP18-075",
+      "pid": 729862,
+      "qty": 4,
+      "price": 0.18,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "883f8f83a2072660:732989:3",
+      "order": "883f8f83a2072660",
+      "date": "2026-11-24",
+      "est": "2026-12-10",
+      "id": "OP18-072",
+      "pid": 732989,
+      "qty": 4,
+      "price": 0.18,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "883f8f83a2072660:732992:1",
+      "order": "883f8f83a2072660",
+      "date": "2026-11-24",
+      "est": "2026-12-10",
+      "id": "OP18-078",
+      "pid": 732992,
+      "qty": 4,
+      "price": 0.15,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "e1716ccd63d7385a:712892:0",
+      "order": "e1716ccd63d7385a",
+      "date": "2026-11-24",
+      "est": "2026-12-10",
+      "id": "OP18-031",
+      "pid": 712892,
+      "qty": 2,
+      "price": 3.11,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "996381b428fb7ace:672759:0",
+      "order": "996381b428fb7ace",
+      "date": "2026-11-01",
+      "est": "2026-11-16",
+      "id": "EB03-017",
+      "pid": 672759,
+      "qty": 4,
+      "price": 0.09,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "6586355e92df5026:672753:0",
+      "order": "6586355e92df5026",
+      "date": "2026-10-30",
+      "est": "2026-11-16",
+      "id": "EB03-012",
+      "pid": 672753,
+      "qty": 4,
+      "price": 0.02,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "8422ba0668c68665:712608:0",
+      "order": "8422ba0668c68665",
+      "date": "2026-10-30",
+      "est": "2026-11-16",
+      "id": "OP17-032",
+      "pid": 712608,
+      "qty": 4,
+      "price": 0.1,
+      "arrived": true,
+      "removed": false
+    },
+    {
+      "key": "f579b5ad94d4b7eb:626667:0",
+      "order": "f579b5ad94d4b7eb",
+      "date": "2026-10-30",
+      "est": "2026-11-16",
+      "id": "OP04-032",
+      "pid": 626667,
+      "qty": 4,
+      "price": 4.25,
+      "arrived": true,
+      "removed": false
+    }
+  ],
+  "orders": [
+    "6586355e92df5026",
+    "6c1c12f22ba8329c",
+    "8422ba0668c68665",
+    "85ad508da5682ef9",
+    "883f8f83a2072660",
+    "996381b428fb7ace",
+    "e1716ccd63d7385a",
+    "f579b5ad94d4b7eb"
+  ],
+  "updatedAt": "2026-11-28T21:16:32.211Z"
 }
