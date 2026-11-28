@@ -191,9 +191,9 @@ Everything else is a static file that the nightly job refreshes.
     reaches a server, and the page clears it at once. A Copy / paste route also exists.
   - **Preview:** the site matches product ids against `data/tcgplayer.json` (`tcgByPid`). Orders
     whose key was imported before are skipped, which makes re-imports safe. Items that aren't
-    known One Piece singles are listed as skipped. Orders whose estimated delivery has passed, or
-    with no estimate that are more than 21 days old, are pre-ticked as arrived; the rest go to In
-    the mail. Nothing is added until the user confirms.
+    known One Piece singles are listed as skipped. **Every imported line goes to In the mail**
+    (`arrived: false`). Someone checks cards off with "Arrived" as the envelopes are opened, and
+    only then do they count as owned. Nothing is added until the user confirms.
   - **The page structure it relies on** (TCGplayer's older order-history page, server-rendered):
     - each order is a `.orderWrap`;
     - the order number follows the "Order Number" `.orderTitle`;

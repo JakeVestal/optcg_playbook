@@ -1554,13 +1554,6 @@ function previewFromPaste() {
   previewImport(payload);
 }
 
-function defaultArrived(date, est) {
-  const today = isoToday();
-  if (est) return est < today;   // estimated delivery date has passed
-  if (date) return (new Date(today) - new Date(date)) / 86400000 > 21;
-  return false;
-}
-
 async function previewImport(payload) {
   await loadTcgData();
   if (!tcgData) { alert("TCGplayer data isn't available right now, so the import can't match card versions. Try again later."); return; }
@@ -1589,15 +1582,12 @@ async function previewImport(payload) {
       lines.push({ key: `${o.k}:${Number(pid)}:${idx}`, order: o.k, date, est, id: v.num, pid: Number(pid), qty,
         price: Number.isFinite(price) ? Math.round(price * 100) / 100 : null, arrived: false, removed: false });
     });
-    fresh.push({ k: o.k, date, est, status: String(o.s || '').replace(/:$/, '').slice(0, 60), lines, skipped, arrived: defaultArrived(date, est) });
+    fresh.push({ k: o.k, date, est, status: String(o.s || '').replace(/:$/, '').slice(0, 60), lines, skipped });
   });
   fresh.sort((a, b) => b.date.localeCompare(a.date));
   importDraft = { fresh, already };
   renderImportPreview();
 }
-
-function importSetArrived(i, on) { if (importDraft && importDraft.fresh[i]) { importDraft.fresh[i].arrived = on; renderImportPreview(); } }
-function importSetAll(on) { if (importDraft) { importDraft.fresh.forEach(o => { o.arrived = on; }); renderImportPreview(); } }
 
 function renderImportPreview() {
   const el = document.getElementById('import-preview');
@@ -1605,19 +1595,16 @@ function renderImportPreview() {
   const { fresh, already } = importDraft;
   const cards = fresh.reduce((s, o) => s + o.lines.reduce((t, l) => t + l.qty, 0), 0);
   const paid = fresh.reduce((s, o) => s + o.lines.reduce((t, l) => t + (l.price != null ? l.price * l.qty : 0), 0), 0);
-  const arrivedN = fresh.filter(o => o.arrived).length;
   if (!fresh.length) {
     el.innerHTML = `<p class="shop-total">Nothing new to import.</p><p class="meta">${already} order${already === 1 ? ' was' : 's were'} already imported earlier.</p>`;
     return;
   }
   el.innerHTML = `<p class="shop-total">${fresh.length} new order${fresh.length > 1 ? 's' : ''} · ${cards} cards · ${money(paid)} paid</p>
     <p class="meta">${already ? `${already} order${already > 1 ? 's' : ''} already imported earlier ${already > 1 ? 'are' : 'is'} skipped. ` : ''}
-    Ticked orders go straight into the collection; the rest go to <strong>In the mail</strong>. Orders whose estimated
-    delivery date has passed are ticked for you. ${arrivedN} of ${fresh.length} are ticked.
-    <button onclick="importSetAll(true)">Tick all</button> <button onclick="importSetAll(false)">Untick all</button></p>` +
+    Everything goes to <strong>In the mail</strong>. Check cards off there as the envelopes arrive.</p>` +
     fresh.map((o, i) => `<div class="imp-order">
-      <label class="imp-head"><input type="checkbox" ${o.arrived ? 'checked' : ''} onchange="importSetArrived(${i}, this.checked)">
-        <span><strong>${esc(fmtDate(o.date) || 'Unknown date')}</strong> · ${o.arrived ? 'arrived' : 'in the mail'}${o.est ? ` · est. ${esc(fmtDate(o.est))}` : ''}${o.status ? ` · ${esc(o.status)}` : ''}</span></label>` +
+      <div class="imp-head">
+        <span><strong>${esc(fmtDate(o.date) || 'Unknown date')}</strong>${o.est ? ` · est. ${esc(fmtDate(o.est))}` : ''}${o.status ? ` · ${esc(o.status)}` : ''}</span></div>` +
       o.lines.map(l => `<div class="imp-line">${l.qty}x ${esc(l.id)} ${esc(versionName(l.id, l.pid))} · ${money(l.price)}${l.qty > 1 && l.price != null ? ` each (${money(l.price * l.qty)})` : ''}</div>`).join('') +
       o.skipped.map(s => `<div class="imp-line meta">skipped: ${s.qty}x ${esc(s.name)} (not a One Piece single we know)</div>`).join('') +
       `</div>`).join('') +
@@ -1631,7 +1618,7 @@ function confirmImport() {
   if (!d || !d.fresh.length) return;
   const ids = [];
   d.fresh.forEach(o => {
-    o.lines.forEach(l => { purchases.push({ ...l, arrived: o.arrived }); ids.push(l.id); });
+    o.lines.forEach(l => { purchases.push({ ...l, arrived: false }); ids.push(l.id); });   // always "In the mail" first
     importedOrders.push(o.k);   // remembered even if every item was skipped, so it isn't offered again
   });
   purchases = cleanPurchases(purchases);
