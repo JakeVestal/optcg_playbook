@@ -165,6 +165,17 @@ Everything else is a static file that the nightly job refreshes.
     latest copy.
   - **Unsaved changes:** the panel shows "Unsaved changes", and leaving the page asks for
     confirmation.
+- **Specify versions (N)** (a Collection panel button; N = copies without a version):
+  - **What it does:** steps through every card number that has "version not specified" copies,
+    using the shopping picker in "specify" mode. Counters are capped at the number of unspecified
+    copies, and leftovers stay unspecified (no guessing). Each tile shows how many of that version
+    are already recorded.
+  - **Single-version cards:** those with exactly one TCGplayer version are set automatically on
+    Done.
+  - **No TCGplayer data:** those cards stay unspecified, and the page says so.
+  - **Close changes nothing.**
+  - **Removing unspecified copies** goes through `adjustUnspecified()`, because older entries can
+    be stored under an alt-art id.
 - **In the mail panel:** purchases grouped by order, each showing its date and estimated delivery.
   "Arrived" moves one line into the collection, "All arrived" moves a whole order, and × removes a
   cancelled or refunded line.

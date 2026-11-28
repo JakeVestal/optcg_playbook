@@ -283,6 +283,7 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
         <button class="secondary" onclick="saveCollection()">Save Collection</button>
         <button class="secondary" onclick="reloadCollection()">Reload</button>
         <button class="secondary" onclick="openImport()">Import TCGplayer orders</button>
+        <button class="secondary" id="specify-btn" onclick="openSpecify()" title="Step through cards whose version isn't recorded yet">Specify versions</button>
       </div>
       <div id="owned-list"></div>
       <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
@@ -971,8 +972,56 @@ function openOwnPicker(num) {
   document.getElementById('pick-modal').classList.add('open');
 }
 
+// "specify" mode: Specify versions in the Collection panel. Steps through every card with copies
+// recorded as "version not specified" and lets the user say which versions they are (up to the
+// number unspecified). Leftovers stay unspecified. Cards with only one TCGplayer version need no
+// choice and are set when the user clicks Done. Closing changes nothing.
+async function openSpecify() {
+  await loadTcgData();
+  const unspec = {};
+  Object.entries(ownedMap()).forEach(([k, q]) => {
+    const { id, pid } = splitKey(k);
+    if (!pid) unspec[baseId(id)] = (unspec[baseId(id)] || 0) + q;
+  });
+  const nums = Object.keys(unspec).sort();
+  if (!nums.length) { alert('Every card in the collection already has its version recorded.'); return; }
+  const queue = [], singles = [], unknown = [];
+  nums.forEach(num => {
+    const vs = tcgVersions(num);
+    const card = cardById(mainIdByBase[num]) || (window.cardVariants?.[num] || [])[0];
+    if (vs.length > 1) queue.push({ id: num, need: unspec[num], card });
+    else if (vs.length === 1) singles.push({ id: num, qty: unspec[num], pid: vs[0].pid });
+    else unknown.push(num);
+  });
+  if (!queue.length) {
+    if (singles.length && confirm(`${singles.length} card${singles.length > 1 ? 's have' : ' has'} only one version on TCGplayer. Record that version for ${singles.length > 1 ? 'them' : 'it'}?` +
+      (unknown.length ? `\n\n${unknown.length} card${unknown.length > 1 ? 's' : ''} without TCGplayer data (e.g. promos) will stay "version not specified".` : ''))) {
+      applySpecify({}, [], singles);
+    } else if (!singles.length) {
+      alert(`The remaining unspecified cards (${unknown.join(', ')}) have no TCGplayer data, so there are no versions to choose from.`);
+    }
+    return;
+  }
+  const draft = {};
+  queue.forEach(x => { draft[x.id] = {}; });
+  pick = { mode: 'specify', queue, i: 0, draft, singles, unknown };
+  renderPicker();
+  document.getElementById('pick-modal').classList.add('open');
+}
+
+function applySpecify(draft, queue, singles) {
+  const ids = [];
+  queue.forEach(x => {
+    Object.entries(draft[x.id] || {}).forEach(([pid, q]) => {
+      if (q > 0) { adjustOwned(x.id, Number(pid), q); adjustUnspecified(x.id, -q); ids.push(x.id); }
+    });
+  });
+  singles.forEach(s => { adjustOwned(s.id, s.pid, s.qty); adjustUnspecified(s.id, -s.qty); ids.push(s.id); });
+  collectionChanged(ids);
+}
+
 function renderPicker() {
-  const own = pick.mode === 'own';
+  const own = pick.mode === 'own', specify = pick.mode === 'specify';
   const x = pick.queue[pick.i];
   const vs = orderedVersions(x.id);
   const def = defaultVersion(vs);
@@ -981,11 +1030,18 @@ function renderPicker() {
   const have = ownedByVersion(x.id), mail = mailByVersion(x.id);
   if (own && (pick.draft[x.id].none || pick.current.none))
     vs.push({ pid: 'none', name: 'Version not specified', abbr: '', price: null });
-  document.getElementById('pick-step').textContent = own ? 'Which versions do you own?' : `Card ${pick.i + 1} of ${pick.queue.length}`;
+  document.getElementById('pick-step').textContent = own ? 'Which versions do you own?'
+    : specify ? `Specify versions · card ${pick.i + 1} of ${pick.queue.length}` : `Card ${pick.i + 1} of ${pick.queue.length}`;
   document.getElementById('pick-title').textContent = `${x.id} ${x.card ? x.card.name : ''}`;
+  const extra = specify && pick.i === 0 && (pick.singles.length || pick.unknown.length)
+    ? `<br><span class="meta">${pick.singles.length ? `${pick.singles.length} more card${pick.singles.length > 1 ? 's have' : ' has'} only one version and will be set when you click Done. ` : ''}` +
+      `${pick.unknown.length ? `${pick.unknown.length} card${pick.unknown.length > 1 ? 's' : ''} without TCGplayer data (e.g. promos) will stay unspecified.` : ''}</span>` : '';
   document.getElementById('pick-status').innerHTML = own
     ? `Owned: <strong>${sel}</strong> in total`
-    : `Selected <strong>${sel} / ${x.need}</strong>` + (rem > 0 ? ` · the other ${rem} will be the standard version` : ' · all copies chosen');
+    : specify
+      ? `You have <strong>${x.need}</strong> cop${x.need > 1 ? 'ies' : 'y'} without a version. Assigned <strong>${sel} / ${x.need}</strong>` +
+        (rem > 0 ? ` · the other ${rem} stay "version not specified"` : ' · all copies assigned') + extra
+      : `Selected <strong>${sel} / ${x.need}</strong>` + (rem > 0 ? ` · the other ${rem} will be the standard version` : ' · all copies chosen');
   document.getElementById('pick-grid').innerHTML = vs.map(v => {
     const n = pick.draft[x.id][v.pid] || 0;
     const arg = v.pid === 'none' ? "'none'" : v.pid;
@@ -993,7 +1049,7 @@ function renderPicker() {
       ? `<img src="${proxyImg(x.id)}" onerror="this.onerror=null;this.src='${officialImg(x.id)}'" alt="" onclick="openModal(this.src)">`
       : `<img src="${tcgImg(v.pid, true)}" onerror="this.onerror=null;this.src='${tcgImg(v.pid)}'" alt="${esc(v.name)}" onclick="openModal(this.src)">`;
     const status = !own && (have[v.pid] || mail[v.pid])
-      ? `<div class="meta">${have[v.pid] ? `own ${have[v.pid]}` : ''}${have[v.pid] && mail[v.pid] ? ' · ' : ''}${mail[v.pid] ? `in the mail ${mail[v.pid]}` : ''}</div>` : '';
+      ? `<div class="meta">${have[v.pid] ? `${specify ? 'already recorded' : 'own'} ${have[v.pid]}` : ''}${have[v.pid] && mail[v.pid] ? ' · ' : ''}${mail[v.pid] ? `in the mail ${mail[v.pid]}` : ''}</div>` : '';
     return `<div class="shop-tile${n ? ' chosen' : ''}">${img}
       <div class="nm">${esc(v.name)}${v === def ? ' <span class="meta">(standard)</span>' : ''}</div>
       <div class="meta">${v.pid === 'none' ? 'reassign these to a version' : `${esc(v.abbr)} · #${v.pid}`}</div>
@@ -1023,13 +1079,20 @@ function pickNext() {
     const num = pick.queue[0].id, draft = pick.draft[num], cur = pick.current;
     new Set([...Object.keys(cur), ...Object.keys(draft)]).forEach(k => {
       const delta = (draft[k] || 0) - (cur[k] || 0);
-      if (delta) adjustOwned(num, k === 'none' ? null : Number(k), delta);
+      if (!delta) return;
+      if (k === 'none') adjustUnspecified(num, delta); else adjustOwned(num, Number(k), delta);
     });
     closePicker();
     collectionChanged([num]);
     return;
   }
   if (pick.i < pick.queue.length - 1) { pick.i++; renderPicker(); return; }
+  if (pick.mode === 'specify') {
+    const { draft, queue, singles } = pick;
+    closePicker();
+    applySpecify(draft, queue, singles);
+    return;
+  }
   // Done: build the final list. Unchosen copies go to the standard version.
   const picks = {};
   shop.needs.forEach(x => {
@@ -1249,6 +1312,20 @@ function adjustOwned(id, pid, delta) {
   m[k] = (m[k] || 0) + delta;
   owned = fromKeyMap(m);
 }
+// Change the "version not specified" copies of one card number. Older entries may be stored under
+// an alt-art id (e.g. OP18-031_p1), so removals take from whichever unspecified entries exist.
+function adjustUnspecified(num, delta) {
+  if (delta > 0) { adjustOwned(num, null, delta); return; }
+  let left = -delta;
+  const m = ownedMap();
+  Object.keys(m).forEach(k => {
+    const { id, pid } = splitKey(k);
+    if (left <= 0 || pid || baseId(id) !== num) return;
+    const take = Math.min(left, m[k]);
+    adjustOwned(id, null, -take);
+    left -= take;
+  });
+}
 function ownedStep(key, delta) {
   const { id, pid } = splitKey(key);
   if (delta < 0 && !(ownedMap()[key] > 0)) return;
@@ -1312,6 +1389,8 @@ function renderOwned() {
     return `<div class="list-row"><span class="lbl" title="${esc(label)}">${r.qty}x ${esc(baseId(r.id))} ${esc(name)}${r.pid ? '' : ' <span class="meta">(version not specified)</span>'}</span>` +
       `<button onclick="ownedStep('${esc(r.k)}', 1)">+</button><button onclick="ownedStep('${esc(r.k)}', -1)">−</button></div>`;
   }).join('') || '<div style="color:var(--muted);font-size:0.8em;">Empty: use +Own on a card, or import your TCGplayer orders</div>';
+  const unspecified = rows.filter(r => !r.pid).reduce((s, r) => s + r.qty, 0);
+  document.getElementById('specify-btn').textContent = `Specify versions (${unspecified})`;
   const bought = purchases.filter(p => !p.removed);
   const paid = bought.reduce((s, p) => s + (p.price != null ? p.price * p.qty : 0), 0);
   document.getElementById('owned-spent').textContent = bought.length
