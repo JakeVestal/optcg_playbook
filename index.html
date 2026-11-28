@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Security policy: scripts only from this site; data can only be sent to this site and our
+     Worker; images only from the hosts below. If you add a new image host or API, list it here. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://optcg-api.arjunbansal-ai.workers.dev https://en.onepiece-cardgame.com https://tcgplayer-cdn.tcgplayer.com; connect-src 'self' https://optcg-state.46jwnf9v56.workers.dev; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>OPTCG Utility Cards</title>
 <style>
 :root {
@@ -116,6 +119,16 @@ button.secondary { background: #2a3650; }
 .inchip.deck { color: var(--gold); border-color: var(--gold); }
 .inchip.table { color: #7eb8ff; border-color: #7eb8ff; }
 .inchip.owned { color: #3fb950; border-color: #3fb950; }
+.inchip.mail { color: #c792ea; border-color: #c792ea; }
+.mail-order { border-bottom: 1px solid var(--border); padding: 4px 0 6px; }
+.mail-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 0.78em; color: var(--muted); margin: 2px 0; }
+.mail-head button { padding: 1px 8px; font-size: 0.95em; border-radius: 8px; }
+.imp-steps { font-size: 0.85em; line-height: 1.6; padding-left: 20px; }
+.imp-steps button { padding: 1px 8px; font-size: 0.9em; }
+.imp-order { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; margin: 8px 0; font-size: 0.85em; }
+.imp-head { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.imp-head input { accent-color: #3fb950; }
+.imp-line { padding: 2px 0 2px 24px; }
 
 /* Cost / Power / Counter filter dropdowns next to the sort buttons */
 .dd { position: relative; display: inline-flex; }
@@ -238,6 +251,7 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
   <button onclick="toggleHide(this,'deck')" data-value="deck">Deck</button>
   <button onclick="toggleHide(this,'table')" data-value="table">Table</button>
   <button onclick="toggleHide(this,'owned')" data-value="owned">Collection</button>
+  <button onclick="toggleHide(this,'mail')" data-value="mail">In the mail</button>
 </div>
 
 <div class="sidebar">
@@ -264,15 +278,21 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
     <div class="panel" style="margin-top:12px;" id="owned-panel">
       <h3>Collection <span id="owned-count" style="color:var(--gold);">0</span> <span style="font-size:0.75em;color:var(--muted);">(shared, cards we own)</span></h3>
       <div id="owned-status" class="warnings"></div>
+      <div id="owned-spent" class="meta" style="margin-bottom:6px;"></div>
       <div style="margin-bottom:6px; display:flex; gap:6px; flex-wrap:wrap;">
         <button class="secondary" onclick="saveCollection()">Save Collection</button>
         <button class="secondary" onclick="reloadCollection()">Reload</button>
+        <button class="secondary" onclick="openImport()">Import TCGplayer orders</button>
       </div>
       <div id="owned-list"></div>
       <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
         <button class="secondary" onclick="openShoppingList(false)">Shopping list: Deck</button>
         <button class="secondary" onclick="openShoppingList(true)">Shopping list: Deck + Table</button>
       </div>
+    </div>
+    <div class="panel" style="margin-top:12px;" id="mail-panel">
+      <h3>In the mail <span id="mail-count" style="color:var(--gold);">0</span> <span style="font-size:0.75em;color:var(--muted);">(bought, not arrived)</span></h3>
+      <div id="mail-list"></div>
     </div>
   </div>
 
@@ -328,6 +348,32 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
   </div>
 </div>
 
+<div class="modal" id="import-modal" onclick="closeImport()" style="overflow-y:auto; align-items:flex-start; padding-top:40px;">
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; max-width:820px; width:92%;" onclick="event.stopPropagation()">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h3 style="margin:0; color:var(--gold);">Import TCGplayer orders</h3>
+      <button onclick="closeImport()">Close</button>
+    </div>
+    <ol class="imp-steps">
+      <li><strong>One-time setup:</strong> the <strong>OPTCG import</strong> bookmark is installed by hand from Jacob's computer
+        (<code>python3 tools/build_bookmarklet.py</code>). For safety it isn't available on this website.</li>
+      <li>Open your <a href="https://store.tcgplayer.com/myaccount/orderhistory" target="_blank" rel="noopener">TCGplayer Order History</a>
+        (logged in) and click the bookmark. It reads every page by itself and opens this site with your orders.</li>
+      <li>Check the preview and click <strong>Add</strong>. Orders already imported are skipped, so run it whenever you've bought something.</li>
+    </ol>
+    <p class="meta"><strong>Safety:</strong> never install an "import" bookmark from a website or a link someone sends you. The real one
+      only reads your order-history pages: it loads no code from anywhere and can't place orders or change anything on TCGplayer.</p>
+    <p class="meta">Privacy: the bookmark reads only order dates, shipping status, estimated delivery dates, and each item's product,
+      quantity and price paid. Names, addresses, payment details and sellers are never read, and order numbers are stored only as a
+      one-way code. Imported purchases are saved in the shared collection file in the public GitHub repo.</p>
+    <details class="meta"><summary>Paste instead</summary>
+      <textarea id="import-paste" class="shop" style="min-height:90px;" placeholder="Paste the text from the bookmark's Copy button"></textarea>
+      <button onclick="previewFromPaste()">Preview</button>
+    </details>
+    <div id="import-preview"></div>
+  </div>
+</div>
+
 <div class="modal" id="pick-modal" style="overflow-y:auto; align-items:flex-start; padding-top:40px; z-index:1100;">
   <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; max-width:960px; width:92%;">
     <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
@@ -347,11 +393,18 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
 </div>
 
 <script>
+// Never run inside another site's frame (clickjacking): break out, or show nothing.
+if (window.top !== window.self) {
+  document.documentElement.style.display = 'none';
+  try { window.top.location = window.self.location.href; } catch (e) { /* stay hidden */ }
+}
 let allCards = [];
 let table = [];   // [{id, qty}] cards being considered for the deck
-let hideIn = new Set();   // 'deck' | 'table' | 'owned': hide cards already in those lists
+let hideIn = new Set();   // 'deck' | 'table' | 'owned' | 'mail': hide cards already in those lists
 let mainIdByBase = {};    // base card number -> id of the card shown in the main list
-let owned = [];   // [{id, qty}] cards the user owns
+let owned = [];            // manual collection changes [{id, pid?, qty}] (see "Shared collection")
+let purchases = [];        // imported TCGplayer order lines (see "Shared collection")
+let importedOrders = [];   // hashes of imported order numbers
 let setAside = new Set();
 let deck = [];
 let activeBlocks = new Set();
@@ -386,6 +439,13 @@ async function load() {
   await loadCollection();
   const applied = await loadDefaultState();
   if (!applied) { render(); refreshTypesList(); }
+  const pendingImport = takeImportFromHash();
+  // version names in the Collection / In the mail panels come from the TCGplayer data
+  loadTcgData().then(() => {
+    renderOwned();
+    renderIncoming();
+    if (pendingImport) openImport(pendingImport);
+  });
 }
 
 // RFC 4180 CSV parser: handles quoted fields, "" escaped quotes, CRLF and newlines in quotes.
@@ -453,7 +513,7 @@ function rangeOptions(key) {
 
 // How many copies of each card number are in the deck / table / collection.
 function tally(list) { const m = {}; list.forEach(d => { const b = baseId(d.id); m[b] = (m[b] || 0) + d.qty; }); return m; }
-function listCounts() { return { deck: tally(deck), table: tally(table), owned: tally(owned) }; }
+function listCounts() { return { deck: tally(deck), table: tally(table), owned: byCard(ownedMap()), mail: tally(inTheMail()) }; }
 
 // Tag checks come straight from the CSV `tags` column (computed by scripts/update_cards.py)
 // so the page and the data never disagree.
@@ -492,10 +552,11 @@ function visibleCardsWithoutTypeFilter() { return filtered('types'); }
 
 function indicatorHTML(id, counts) {
   const b = baseId(id);
-  const d = counts.deck[b] || 0, t = counts.table[b] || 0, o = counts.owned[b] || 0;
+  const d = counts.deck[b] || 0, t = counts.table[b] || 0, o = counts.owned[b] || 0, m = counts.mail[b] || 0;
   return (d ? `<span class="inchip deck" title="Copies in your deck">Deck ×${d}</span>` : '') +
     (t ? `<span class="inchip table" title="On your table">Table ×${t}</span>` : '') +
-    (o ? `<span class="inchip owned" title="Copies in your collection">Own ×${o}</span>` : '');
+    (o ? `<span class="inchip owned" title="Copies in your collection">Own ×${o}</span>` : '') +
+    (m ? `<span class="inchip mail" title="Bought, not arrived yet">Mail ×${m}</span>` : '');
 }
 
 // After a deck / table / collection change: refresh that card's indicator in place, or
@@ -587,7 +648,7 @@ function render() {
             <button onclick="setAsideCard('${c.id}')">×</button>
             <button onclick="addToDeck('${c.id}')" title="Add to deck">+Deck</button>
             <button onclick="addToTable('${c.id}')" title="Put on the table (considering)">+Table</button>
-            <button onclick="addOwned('${c.id}')" title="Record one owned copy">+Own</button>
+            <button onclick="ownCard('${c.id}')" title="Record owned copies (pick the version)">+Own</button>
           </div>
         </div>
         <div class="meta">${esc(c.category)} · ${esc(c.cost || '—')}c · ${esc(c.power || '—')} · ${c.counterValue ? '+' + esc(c.counterValue) : '—'} · ${esc(c.colors)}</div>
@@ -601,6 +662,7 @@ function render() {
   renderDeck();
   renderTable();
   renderOwned();
+  renderIncoming();
   // types list updated only from refreshTypesList()
 }
 
@@ -626,9 +688,10 @@ function renderSetAside() {
 
 let cardIndex = new Map();
 const cardById = id => cardIndex.get(id);
-// Card ids are only ever letters, digits, "-" and "_" (e.g. OP18-034_p1). Anything else in the
-// CSV or a saved state is rejected, which also keeps ids safe inside onclick="..." attributes.
-const VALID_ID = /^[A-Za-z0-9_-]{1,40}$/;
+// Card ids always look like OP18-034, OP18-034_p1, ST01-001_r1 or P-038. Anything else in the CSV
+// or a saved state is rejected. This also keeps ids safe inside onclick="..." attributes, where
+// HTML escaping alone would NOT be enough (the browser decodes entities before running the JS).
+const VALID_ID = /^[A-Z]{1,4}\d{0,3}-\d{1,4}(?:_[pr]\d{1,2})?$/;
 // Images: the community proxy first, the official site as a fallback.
 const proxyImg = id => `https://optcg-api.arjunbansal-ai.workers.dev/images/${id}`;
 const officialImg = id => `https://en.onepiece-cardgame.com/images/cardlist/card/${id}.png`;
@@ -636,7 +699,7 @@ const baseId = id => id.replace(/_[pr]\d+$/, '');
 const isLeader = c => c && (c.category || '').toUpperCase() === 'LEADER';
 const qtyOf = (list, id) => (list.find(d => d.id === id) || {}).qty || 0;
 
-// Generic +1 / -1 helpers for the deck, table and owned lists.
+// Generic +1 / -1 helpers for the deck and table lists.
 function bump(list, id, delta) {
   const e = list.find(d => d.id === id);
   if (e) e.qty += delta;
@@ -650,8 +713,6 @@ function removeFromDeck(id) { deck = bump(deck, id, -1); renderDeck(); afterList
 function addToTable(id) { if (!qtyOf(table, id)) table = bump(table, id, 1); renderTable(); afterListChange(id); }
 function removeFromTable(id) { table = table.filter(d => d.id !== id); renderTable(); afterListChange(id); }
 function tableToDeck(id) { addToDeck(id); }
-function addOwned(id) { owned = bump(owned, id, 1); renderOwned(); afterListChange(id); }
-function removeOwned(id) { owned = bump(owned, id, -1); renderOwned(); afterListChange(id); }
 
 function deckWarnings() {
   const w = [];
@@ -708,24 +769,7 @@ function renderTable() {
   }).join('') || '<div style="color:var(--muted);font-size:0.8em;">Empty: use +Table on a card</div>';
 }
 
-function renderOwned() {
-  document.getElementById('owned-count').textContent = owned.reduce((s, d) => s + d.qty, 0);
-  document.getElementById('owned-list').innerHTML = [...owned].sort((a, b) => a.id.localeCompare(b.id)).map(d => {
-    const c = cardById(d.id);
-    return listRow(`${d.qty}x ${esc(d.id)} ${c ? esc(c.name) : ''}`,
-      `<button onclick="addOwned('${esc(d.id)}')">+</button><button onclick="removeOwned('${esc(d.id)}')">−</button>`);
-  }).join('') || '<div style="color:var(--muted);font-size:0.8em;">Empty: use +Own on a card</div>';
-  const st = document.getElementById('owned-status');
-  const dirty = collectionDirty();
-  st.className = 'warnings' + (dirty ? '' : collectionMeta.updatedAt ? ' ok' : ' muted');
-  st.innerHTML = dirty
-    ? '<div>Unsaved changes: click Save Collection</div>'
-    : (collectionMeta.updatedAt
-        ? `<div>Saved · ${esc(new Date(collectionMeta.updatedAt).toLocaleString())}</div>`
-        : '<div>Not saved yet</div>');
-}
-
-// Shopping list = wanted − owned, counted per card number (alt arts count as the same card).
+// Shopping list = wanted − owned − in the mail, counted per card number (alt arts count as the same card).
 // Table cards count as wanted at the deck maximum (4, or 1 for Leaders) unless already in the deck.
 function shoppingNeeds(includeTable) {
   const want = {};
@@ -735,10 +779,10 @@ function shoppingNeeds(includeTable) {
     const max = isLeader(cardById(d.id)) ? 1 : 4;
     want[b] = Math.max(want[b] || 0, max);
   });
-  const have = {};
-  owned.forEach(d => { const b = baseId(d.id); have[b] = (have[b] || 0) + d.qty; });
+  // cards already owned or in the mail don't need buying again
+  const counts = listCounts();
   return Object.entries(want)
-    .map(([b, n]) => ({ id: b, need: n - (have[b] || 0), card: cardById(b) || (window.cardVariants?.[b] || [])[0] }))
+    .map(([b, n]) => ({ id: b, need: n - (counts.owned[b] || 0) - (counts.mail[b] || 0), card: cardById(b) || (window.cardVariants?.[b] || [])[0] }))
     .filter(x => x.need > 0)
     .sort((a, b) => a.id.localeCompare(b.id));
 }
@@ -746,13 +790,35 @@ function shoppingNeeds(includeTable) {
 // ---------- TCGplayer data: data/tcgplayer.json, built nightly by scripts/update_prices.py from tcgcsv.com
 // (tcgcsv blocks browser requests, so the page never calls it directly).
 let tcgData = null;   // { updated, cards: { "OP18-031": [[productId, name, setAbbr, marketPrice|null], ...] } }
-async function loadTcgData() {
-  if (tcgData) return tcgData;
-  try {
-    const res = await fetch('data/tcgplayer.json', { cache: 'no-cache' });
-    if (res.ok) tcgData = await res.json();
-  } catch (e) { console.warn('TCGplayer data load failed', e); }
-  return tcgData;
+let tcgByPid = new Map();   // productId -> { num, name, abbr, price }
+let tcgLoading = null;
+function loadTcgData() {
+  if (tcgData) return Promise.resolve(tcgData);
+  if (!tcgLoading) tcgLoading = (async () => {
+    try {
+      const res = await fetch('data/tcgplayer.json', { cache: 'no-cache' });
+      if (res.ok) {
+        const raw = await res.json();
+        // Third-party data (tcgcsv / TCGplayer): keep only well-formed products. Product ids end up
+        // inside onclick="..." and image URLs, so they must be plain integers.
+        const cards = Object.create(null);
+        Object.entries(raw && raw.cards || {}).forEach(([num, prods]) => {
+          if (!VALID_ID.test(num) || !Array.isArray(prods)) return;
+          const ok = prods.filter(p => Array.isArray(p) && Number.isSafeInteger(p[0]) && p[0] > 0)
+            .map(([pid, name, abbr, price]) => [pid, String(name || ''), String(abbr || ''),
+              typeof price === 'number' && Number.isFinite(price) ? price : null]);
+          if (ok.length) cards[num] = ok;
+        });
+        tcgData = { updated: String(raw && raw.updated || ''), cards };
+        tcgByPid = new Map();
+        Object.entries(cards).forEach(([num, prods]) =>
+          prods.forEach(([pid, name, abbr, price]) => tcgByPid.set(pid, { num, name, abbr, price })));
+      }
+    } catch (e) { console.warn('TCGplayer data load failed', e); }
+    tcgLoading = null;
+    return tcgData;
+  })();
+  return tcgLoading;
 }
 const tcgImg = (pid, big) => `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_${big ? 'in_1000x1000' : '200w'}.jpg`;
 const money = v => (v == null ? '—' : '$' + v.toFixed(2));
@@ -895,44 +961,74 @@ function openAltPicker() {
 
 function pickSum(num) { return Object.values(pick.draft[num]).reduce((s, n) => s + n, 0); }
 
+// "own" mode: +Own on a card with alt arts. Same screen, one card, no cap: set how many of each
+// version you own. Copies recorded without a version show as "Version not specified".
+function openOwnPicker(num) {
+  const card = cardById(mainIdByBase[num]) || (window.cardVariants?.[num] || [])[0];
+  const current = ownedByVersion(num);
+  pick = { mode: 'own', queue: [{ id: num, need: Infinity, card }], i: 0, draft: { [num]: { ...current } }, current };
+  renderPicker();
+  document.getElementById('pick-modal').classList.add('open');
+}
+
 function renderPicker() {
+  const own = pick.mode === 'own';
   const x = pick.queue[pick.i];
   const vs = orderedVersions(x.id);
   const def = defaultVersion(vs);
   const sel = pickSum(x.id);
   const rem = x.need - sel;
-  document.getElementById('pick-step').textContent = `Card ${pick.i + 1} of ${pick.queue.length}`;
+  const have = ownedByVersion(x.id), mail = mailByVersion(x.id);
+  if (own && (pick.draft[x.id].none || pick.current.none))
+    vs.push({ pid: 'none', name: 'Version not specified', abbr: '', price: null });
+  document.getElementById('pick-step').textContent = own ? 'Which versions do you own?' : `Card ${pick.i + 1} of ${pick.queue.length}`;
   document.getElementById('pick-title').textContent = `${x.id} ${x.card ? x.card.name : ''}`;
-  document.getElementById('pick-status').innerHTML =
-    `Selected <strong>${sel} / ${x.need}</strong>` +
-    (rem > 0 ? ` · the other ${rem} will be the standard version` : ' · all copies chosen');
+  document.getElementById('pick-status').innerHTML = own
+    ? `Owned: <strong>${sel}</strong> in total`
+    : `Selected <strong>${sel} / ${x.need}</strong>` + (rem > 0 ? ` · the other ${rem} will be the standard version` : ' · all copies chosen');
   document.getElementById('pick-grid').innerHTML = vs.map(v => {
     const n = pick.draft[x.id][v.pid] || 0;
-    return `<div class="shop-tile${n ? ' chosen' : ''}">
-      <img src="${tcgImg(v.pid, true)}" onerror="this.onerror=null;this.src='${tcgImg(v.pid)}'" alt="${esc(v.name)}" onclick="openModal(this.src)">
+    const arg = v.pid === 'none' ? "'none'" : v.pid;
+    const img = v.pid === 'none'
+      ? `<img src="${proxyImg(x.id)}" onerror="this.onerror=null;this.src='${officialImg(x.id)}'" alt="" onclick="openModal(this.src)">`
+      : `<img src="${tcgImg(v.pid, true)}" onerror="this.onerror=null;this.src='${tcgImg(v.pid)}'" alt="${esc(v.name)}" onclick="openModal(this.src)">`;
+    const status = !own && (have[v.pid] || mail[v.pid])
+      ? `<div class="meta">${have[v.pid] ? `own ${have[v.pid]}` : ''}${have[v.pid] && mail[v.pid] ? ' · ' : ''}${mail[v.pid] ? `in the mail ${mail[v.pid]}` : ''}</div>` : '';
+    return `<div class="shop-tile${n ? ' chosen' : ''}">${img}
       <div class="nm">${esc(v.name)}${v === def ? ' <span class="meta">(standard)</span>' : ''}</div>
-      <div class="meta">${esc(v.abbr)} · #${v.pid}</div>
-      <div>${money(v.price)}</div>
+      <div class="meta">${v.pid === 'none' ? 'reassign these to a version' : `${esc(v.abbr)} · #${v.pid}`}</div>
+      ${v.pid === 'none' ? '' : `<div>${money(v.price)}</div>`}${status}
       <div class="counter">
-        <button onclick="pickAdj(${v.pid}, -1)" ${n <= 0 ? 'disabled' : ''}>−</button>
+        <button onclick="pickAdj(${arg}, -1)" ${n <= 0 ? 'disabled' : ''}>−</button>
         <span>${n}</span>
-        <button onclick="pickAdj(${v.pid}, 1)" ${sel >= x.need ? 'disabled' : ''}>+</button>
+        <button onclick="pickAdj(${arg}, 1)" ${!own && sel >= x.need ? 'disabled' : ''}>+</button>
       </div></div>`;
   }).join('');
   document.getElementById('pick-back').style.visibility = pick.i > 0 ? 'visible' : 'hidden';
-  document.getElementById('pick-next').textContent = pick.i < pick.queue.length - 1 ? 'Next →' : 'Done';
+  document.getElementById('pick-next').textContent = own ? 'Save' : (pick.i < pick.queue.length - 1 ? 'Next →' : 'Done');
 }
 
 function pickAdj(pid, delta) {
   const x = pick.queue[pick.i];
   const d = pick.draft[x.id];
   const n = (d[pid] || 0) + delta;
-  if (n < 0 || (delta > 0 && pickSum(x.id) >= x.need)) return;
+  if (n < 0 || (pick.mode !== 'own' && delta > 0 && pickSum(x.id) >= x.need)) return;
   d[pid] = n;
   renderPicker();
 }
 function pickBack() { if (pick.i > 0) { pick.i--; renderPicker(); } }
 function pickNext() {
+  if (pick.mode === 'own') {
+    // Save: record the difference between what was owned and what the user set.
+    const num = pick.queue[0].id, draft = pick.draft[num], cur = pick.current;
+    new Set([...Object.keys(cur), ...Object.keys(draft)]).forEach(k => {
+      const delta = (draft[k] || 0) - (cur[k] || 0);
+      if (delta) adjustOwned(num, k === 'none' ? null : Number(k), delta);
+    });
+    closePicker();
+    collectionChanged([num]);
+    return;
+  }
   if (pick.i < pick.queue.length - 1) { pick.i++; renderPicker(); return; }
   // Done: build the final list. Unchosen copies go to the standard version.
   const picks = {};
@@ -1035,54 +1131,259 @@ const WORKER = "https://optcg-state.46jwnf9v56.workers.dev";
 
 // ---------- Shared collection: ONE file, saved_states/collection.json, shared by the household.
 // It loads at page load, and only "Save Collection" writes it (Save/Load State never touch it).
-// Saving re-reads the latest copy through the Worker and does a three-way merge, so two people
-// editing at the same time don't overwrite each other: each card gets
-// mine + theirs − what this page originally loaded.
+//
+// File format (version 2):
+//   owned:     [{id, pid?, qty}]  manual changes from +Own and −. pid is the TCGplayer product id
+//                                 of the version (missing = "version not specified"). qty can be
+//                                 negative, e.g. a purchased card that was later traded away.
+//   purchases: [{key, order, date, est, id, pid, qty, price, arrived, removed}]
+//                                 imported TCGplayer order lines with the real price paid.
+//                                 Not arrived (and not removed) = "In the mail".
+//   orders:    [orderKey]         imported orders (a one-way hash of the order number), so the
+//                                 same order is never imported twice.
+// Cards in the house, per card + version = arrived purchases + manual changes.
+//
+// Saving re-reads the latest copy through the Worker and merges it with this page's changes:
+//   owned      per card + version: mine + theirs − what this page loaded
+//   purchases  union by key; once marked arrived or removed it stays that way
+//   orders     union
+// so two people editing at once never overwrite each other, and an older open tab that doesn't
+// know about purchases can't erase them.
 const COLLECTION_NAME = 'collection';
-let collectionBase = [];       // the collection as last loaded or saved by this page
-let collectionMeta = {};       // { updatedAt }
+let collectionBase = { owned: [], purchases: [], orders: [] };   // as last loaded / saved here
+let collectionMeta = {};                                          // { updatedAt }
 
 const isReservedName = n => n.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase() === COLLECTION_NAME;
-// Keep only well-formed {id, qty} entries (qty a positive whole number).
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const verKey = (id, pid) => id + '|' + (pid || '');
+const splitKey = k => { const i = k.indexOf('|'); const pid = k.slice(i + 1); return { id: k.slice(0, i), pid: pid ? Number(pid) : null }; };
+const deepCopy = o => JSON.parse(JSON.stringify(o));
+
+// Keep only well-formed {id, qty} entries (qty a positive whole number). Used for deck / table.
 function cleanList(list) {
   return (Array.isArray(list) ? list : [])
     .map(d => ({ id: String(d && d.id || ''), qty: Math.floor(Number(d && d.qty)) }))
     .filter(d => VALID_ID.test(d.id) && d.qty > 0);
 }
-const tallyExact = list => { const m = {}; (list || []).forEach(d => { if (d && d.id && d.qty > 0) m[d.id] = (m[d.id] || 0) + d.qty; }); return m; };
-const fromTally = m => Object.entries(m).filter(([, q]) => q > 0).map(([id, qty]) => ({ id, qty })).sort((a, b) => a.id.localeCompare(b.id));
-const normalizeOwned = list => fromTally(tallyExact(cleanList(list)));
 
+// key -> qty  <->  [{id, pid?, qty}]
+function keyMap(list) {
+  const m = {};
+  (Array.isArray(list) ? list : []).forEach(d => {
+    const id = String(d && d.id || ''), qty = Math.trunc(Number(d && d.qty));
+    const pid = d && d.pid != null && /^\d{1,12}$/.test(String(d.pid)) ? Number(d.pid) : null;
+    if (VALID_ID.test(id) && qty) m[verKey(id, pid)] = (m[verKey(id, pid)] || 0) + qty;
+  });
+  return m;
+}
+function fromKeyMap(m) {
+  return Object.entries(m).filter(([, q]) => q).map(([k, qty]) => {
+    const { id, pid } = splitKey(k);
+    return pid ? { id, pid, qty } : { id, qty };
+  }).sort((a, b) => a.id.localeCompare(b.id) || (a.pid || 0) - (b.pid || 0));
+}
+const cleanManual = list => fromKeyMap(keyMap(list));
+
+function cleanPurchases(list) {
+  const out = new Map();
+  (Array.isArray(list) ? list : []).forEach(p => {
+    if (!p || typeof p.key !== 'string' || !/^[0-9a-z:_-]{1,80}$/i.test(p.key)) return;
+    const id = String(p.id || ''), qty = Math.floor(Number(p.qty)), pid = Number(p.pid);
+    if (!VALID_ID.test(id) || !(qty > 0) || !(pid > 0)) return;
+    const price = p.price == null || p.price === '' ? NaN : Number(p.price);
+    out.set(p.key, {
+      key: p.key, order: /^[0-9a-z_-]{1,64}$/i.test(p.order || '') ? p.order : '',
+      date: ISO_DATE.test(p.date) ? p.date : '', est: ISO_DATE.test(p.est) ? p.est : '',
+      id, pid, qty, price: Number.isFinite(price) ? price : null,
+      arrived: !!p.arrived, removed: !!p.removed
+    });
+  });
+  return [...out.values()].sort((a, b) => b.date.localeCompare(a.date) || a.key.localeCompare(b.key));
+}
+const cleanOrders = list => [...new Set((Array.isArray(list) ? list : [])
+  .filter(k => typeof k === 'string' && /^[0-9a-z_-]{1,64}$/i.test(k)))].sort();
+
+const collectionState = () => ({ owned: cleanManual(owned), purchases: cleanPurchases(purchases), orders: cleanOrders(importedOrders) });
+function setCollection(st) {
+  owned = cleanManual(st.owned);
+  purchases = cleanPurchases(st.purchases);
+  importedOrders = cleanOrders(st.orders);
+}
 function collectionDirty() {
-  return JSON.stringify(normalizeOwned(owned)) !== JSON.stringify(normalizeOwned(collectionBase));
+  const b = collectionBase;
+  return JSON.stringify(collectionState()) !==
+    JSON.stringify({ owned: cleanManual(b.owned), purchases: cleanPurchases(b.purchases), orders: cleanOrders(b.orders) });
+}
+
+// What is actually in the house: key (card|version) -> qty, never below 0.
+function ownedMap() {
+  const m = keyMap(owned);
+  purchases.forEach(p => { if (p.arrived && !p.removed) { const k = verKey(p.id, p.pid); m[k] = (m[k] || 0) + p.qty; } });
+  Object.keys(m).forEach(k => { if (m[k] <= 0) delete m[k]; });
+  return m;
+}
+const inTheMail = () => purchases.filter(p => !p.arrived && !p.removed);
+function byCard(m) {
+  const out = {};
+  Object.entries(m).forEach(([k, q]) => { const b = baseId(splitKey(k).id); out[b] = (out[b] || 0) + q; });
+  return out;
+}
+// For one card number: { pid | 'none': qty }
+function ownedByVersion(num) {
+  const out = {};
+  Object.entries(ownedMap()).forEach(([k, q]) => {
+    const { id, pid } = splitKey(k);
+    if (baseId(id) === num) out[pid || 'none'] = (out[pid || 'none'] || 0) + q;
+  });
+  return out;
+}
+function mailByVersion(num) {
+  const out = {};
+  inTheMail().forEach(p => { if (baseId(p.id) === num) out[p.pid] = (out[p.pid] || 0) + p.qty; });
+  return out;
+}
+
+function adjustOwned(id, pid, delta) {
+  const m = keyMap(owned);
+  const k = verKey(id, pid);
+  m[k] = (m[k] || 0) + delta;
+  owned = fromKeyMap(m);
+}
+function ownedStep(key, delta) {
+  const { id, pid } = splitKey(key);
+  if (delta < 0 && !(ownedMap()[key] > 0)) return;
+  adjustOwned(id, pid, delta);
+  collectionChanged([id]);
+}
+// +Own on a card: cards with alt arts open the version picker; others add one copy directly.
+async function ownCard(cardId) {
+  const num = baseId(cardId);
+  await loadTcgData();
+  const vs = tcgVersions(num);
+  if (vs.length > 1) { openOwnPicker(num); return; }
+  adjustOwned(num, vs[0] ? vs[0].pid : null, 1);
+  collectionChanged([num]);
+}
+function markArrived(key) {
+  const p = purchases.find(x => x.key === key);
+  if (!p) return;
+  p.arrived = true;
+  collectionChanged([p.id]);
+}
+function markOrderArrived(order) {
+  const ids = [];
+  purchases.forEach(p => { if (p.order === order && !p.removed && !p.arrived) { p.arrived = true; ids.push(p.id); } });
+  collectionChanged(ids);
+}
+function removePurchase(key) {
+  const p = purchases.find(x => x.key === key);
+  if (!p || !confirm('Remove this purchase (for example, a cancelled or refunded order)?')) return;
+  p.removed = true;
+  collectionChanged([p.id]);
+}
+function collectionChanged(ids) {
+  renderOwned();
+  renderIncoming();
+  if (hideIn.size) { render(); refreshTypesList(); return; }
+  [...new Set(ids)].forEach(afterListChange);
+}
+
+function versionName(num, pid) {
+  const v = pid && tcgByPid.get(pid);
+  if (v) return v.name;
+  const c = cardById(mainIdByBase[baseId(num)] || num);
+  return c ? c.name : '';
+}
+const fmtDate = iso => {
+  if (!ISO_DATE.test(iso || '')) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+};
+const isoToday = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+
+function renderOwned() {
+  const m = ownedMap();
+  const rows = Object.entries(m).map(([k, qty]) => ({ k, qty, ...splitKey(k) }))
+    .sort((a, b) => baseId(a.id).localeCompare(baseId(b.id)) || (a.pid || 0) - (b.pid || 0));
+  document.getElementById('owned-count').textContent = rows.reduce((s, r) => s + r.qty, 0);
+  document.getElementById('owned-list').innerHTML = rows.map(r => {
+    const name = versionName(r.id, r.pid);
+    const label = `${r.qty}x ${baseId(r.id)} ${name}${r.pid ? '' : ' (version not specified)'}`;
+    return `<div class="list-row"><span class="lbl" title="${esc(label)}">${r.qty}x ${esc(baseId(r.id))} ${esc(name)}${r.pid ? '' : ' <span class="meta">(version not specified)</span>'}</span>` +
+      `<button onclick="ownedStep('${esc(r.k)}', 1)">+</button><button onclick="ownedStep('${esc(r.k)}', -1)">−</button></div>`;
+  }).join('') || '<div style="color:var(--muted);font-size:0.8em;">Empty: use +Own on a card, or import your TCGplayer orders</div>';
+  const bought = purchases.filter(p => !p.removed);
+  const paid = bought.reduce((s, p) => s + (p.price != null ? p.price * p.qty : 0), 0);
+  document.getElementById('owned-spent').textContent = bought.length
+    ? `${bought.reduce((s, p) => s + p.qty, 0)} cards bought on TCGplayer · ${money(paid)} paid · ${importedOrders.length} orders imported`
+    : '';
+  const st = document.getElementById('owned-status');
+  const dirty = collectionDirty();
+  st.className = 'warnings' + (dirty ? '' : collectionMeta.updatedAt ? ' ok' : ' muted');
+  st.innerHTML = dirty
+    ? '<div>Unsaved changes: click Save Collection</div>'
+    : (collectionMeta.updatedAt
+        ? `<div>Saved · ${esc(new Date(collectionMeta.updatedAt).toLocaleString())}</div>`
+        : '<div>Not saved yet</div>');
+}
+
+function renderIncoming() {
+  const lines = inTheMail();
+  document.getElementById('mail-count').textContent = lines.reduce((s, p) => s + p.qty, 0);
+  const groups = new Map();
+  lines.forEach(p => { const g = p.order || p.key; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(p); });
+  document.getElementById('mail-list').innerHTML = [...groups.entries()].map(([order, ls]) => {
+    const n = ls.reduce((s, p) => s + p.qty, 0);
+    const est = ls[0].est ? ` · est. ${esc(fmtDate(ls[0].est))}` : '';
+    return `<div class="mail-order"><div class="mail-head"><span>${esc(fmtDate(ls[0].date) || 'Order')}${est} · ${n} card${n > 1 ? 's' : ''}</span>` +
+      (ls.length > 1 ? `<button onclick="markOrderArrived('${esc(order)}')" title="Every card in this order arrived">All arrived</button>` : '') + `</div>` +
+      ls.map(p => {
+        const name = versionName(p.id, p.pid);
+        return `<div class="list-row"><span class="lbl" title="${esc(`${p.qty}x ${p.id} ${name}`)}">${p.qty}x ${esc(p.id)} ${esc(name)}${p.price != null ? ` · ${money(p.price)}` : ''}</span>` +
+          `<button onclick="markArrived('${esc(p.key)}')" title="It arrived: move it to the collection">Arrived</button>` +
+          `<button onclick="removePurchase('${esc(p.key)}')" title="Cancelled or refunded">×</button></div>`;
+      }).join('') + `</div>`;
+  }).join('') || '<div style="color:var(--muted);font-size:0.8em;">Nothing in the mail</div>';
 }
 
 function mergeCollections(base, mine, theirs) {
-  const B = tallyExact(base), M = tallyExact(mine), T = tallyExact(theirs);
+  const B = keyMap(base.owned), M = keyMap(mine.owned), T = keyMap(theirs.owned);
   const out = {};
   let pulled = 0;
-  new Set([...Object.keys(B), ...Object.keys(M), ...Object.keys(T)]).forEach(id => {
-    const b = B[id] || 0, m = M[id] || 0, t = T[id] || 0;
+  new Set([...Object.keys(B), ...Object.keys(M), ...Object.keys(T)]).forEach(k => {
+    const b = B[k] || 0, m = M[k] || 0, t = T[k] || 0;
     if (t !== b) pulled++;
-    out[id] = Math.max(0, m + t - b);
+    out[k] = m + t - b;
   });
-  return { merged: fromTally(out), pulled };
+  const basePurchases = new Map(cleanPurchases(base.purchases).map(p => [p.key, p]));
+  const P = new Map();
+  [...cleanPurchases(theirs.purchases), ...cleanPurchases(mine.purchases)].forEach(p => {
+    const e = P.get(p.key);
+    P.set(p.key, e ? { ...e, arrived: e.arrived || p.arrived, removed: e.removed || p.removed } : p);
+  });
+  cleanPurchases(theirs.purchases).forEach(p => {
+    const bp = basePurchases.get(p.key);
+    if (!bp || bp.arrived !== p.arrived || bp.removed !== p.removed) pulled++;
+  });
+  return {
+    merged: { owned: fromKeyMap(out), purchases: cleanPurchases([...P.values()]), orders: cleanOrders([...(mine.orders || []), ...(theirs.orders || [])]) },
+    pulled
+  };
 }
 
 // Reads the copy published on the site. A save can take about a minute to show up here;
 // that is safe because saving always merges with the latest copy first.
 async function loadCollection() {
+  let data = {};
   try {
     const res = await fetch('saved_states/' + COLLECTION_NAME + '.json', { cache: 'no-cache' });
-    const data = res.ok ? await res.json() : {};
-    owned = normalizeOwned(data.owned);
-    collectionMeta = { updatedAt: data.updatedAt || '' };
+    if (res.ok) data = await res.json();
   } catch (e) {
     console.warn('collection load failed', e);
-    owned = [];
-    collectionMeta = {};
   }
-  collectionBase = owned.map(d => ({ ...d }));
+  setCollection(data || {});
+  collectionMeta = { updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : '', version: data.version || 1 };
+  collectionBase = deepCopy(collectionState());
 }
 
 async function reloadCollection() {
@@ -1100,29 +1401,36 @@ async function saveCollection() {
     let { res, data } = await workerCall({ action: "load", password, name: COLLECTION_NAME });
     if (res.status === 401) { alert("Save failed: bad password"); return; }
     if (!res.ok && res.status !== 404) { alert("Save failed: " + (data.error || res.status)); return; }
-    const theirs = res.ok ? normalizeOwned(data.state && data.state.owned) : [];
+    const raw = res.ok && data.state ? data.state : {};
+    // A version-2 file that comes back without "version: 2" was saved by an outdated copy of this
+    // page (a tab opened before the update). Its owned list is unreliable, so keep ours; its
+    // purchases/orders can't do harm because those merge as a union.
+    const staleWriter = collectionMeta.version === 2 && raw.version !== 2;
+    const theirs = { owned: staleWriter ? cleanManual(collectionBase.owned) : cleanManual(raw.owned),
+      purchases: cleanPurchases(raw.purchases), orders: cleanOrders(raw.orders) };
     if (!collectionDirty()) {
       // Nothing changed here: just adopt the latest shared copy, no save needed.
-      owned = theirs;
-      collectionBase = theirs.map(d => ({ ...d }));
-      if (res.ok) collectionMeta = { updatedAt: data.state.updatedAt || '' };
+      setCollection(theirs);
+      collectionBase = deepCopy(theirs);
+      collectionMeta = { updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : '', version: raw.version || 1 };
       render();
       refreshTypesList();
       alert("No changes to save. You're looking at the latest shared collection.");
       return;
     }
-    const { merged, pulled } = mergeCollections(collectionBase, owned, theirs);
-    const state = { owned: merged, updatedAt: new Date().toISOString() };
+    const { merged, pulled } = mergeCollections(collectionBase, collectionState(), theirs);
+    const state = { version: 2, ...merged, updatedAt: new Date().toISOString() };
     ({ res, data } = await workerCall({ action: "save", password, name: COLLECTION_NAME, state }));
     if (!res.ok) { alert("Save failed: " + (data.error || res.status)); return; }
-    owned = merged;
-    collectionBase = merged.map(d => ({ ...d }));
-    collectionMeta = { updatedAt: state.updatedAt };
+    setCollection(merged);
+    collectionBase = deepCopy(merged);
+    collectionMeta = { updatedAt: state.updatedAt, version: 2 };
     render();
     refreshTypesList();
-    alert(pulled
-      ? `Collection saved. It also includes ${pulled} card change${pulled > 1 ? 's' : ''} someone else saved since this page loaded.`
-      : "Collection saved.");
+    alert((pulled
+      ? `Collection saved. It also includes ${pulled} change${pulled > 1 ? 's' : ''} someone else saved since this page loaded.`
+      : "Collection saved.") +
+      (staleWriter ? "\n\nNote: an outdated copy of this page (an old open tab?) had saved the collection. Its changes to owned cards were ignored. Please reload any other open tabs of this site." : ''));
   } catch (e) {
     alert("Save error: " + e.message);
   }
@@ -1132,6 +1440,130 @@ async function saveCollection() {
 window.addEventListener('beforeunload', e => {
   if (collectionDirty()) { e.preventDefault(); e.returnValue = ''; }
 });
+
+// ---------- Import TCGplayer orders
+// The "OPTCG import" bookmark runs on TCGplayer's Order History page, reads every page of it, and
+// opens this site with the orders in the URL fragment (#tcgimport=...), which never reaches a
+// server. Nothing is added until the user confirms the preview.
+// The bookmark's code is deliberately NOT in this repo or on this site: it runs inside the logged-in
+// TCGplayer session, so it is kept on the owner's computer only (tools/, git-ignored) and installed
+// by hand. This page only receives and validates what the bookmark sends.
+const IMPORT_HASH = '#tcgimport=';
+let importDraft = null;
+
+function takeImportFromHash() {
+  if (!location.hash.startsWith(IMPORT_HASH)) return null;
+  const raw = location.hash.slice(IMPORT_HASH.length);
+  history.replaceState(null, '', location.pathname + location.search);
+  try { return JSON.parse(decodeURIComponent(raw)); }
+  catch (e) { alert('That import link was damaged. Click the bookmark on TCGplayer again.'); return null; }
+}
+window.addEventListener('hashchange', () => { const p = takeImportFromHash(); if (p) openImport(p); });
+
+async function openImport(payload) {
+  document.getElementById('import-modal').classList.add('open');
+  if (payload) await previewImport(payload);
+  else renderImportPreview();
+}
+function closeImport() { document.getElementById('import-modal').classList.remove('open'); }
+
+function previewFromPaste() {
+  const t = document.getElementById('import-paste').value.trim();
+  if (!t) return;
+  let payload;
+  try { payload = JSON.parse(t); } catch (e) { alert("That doesn't look like an OPTCG import. Copy it again from the bookmark's box on TCGplayer."); return; }
+  previewImport(payload);
+}
+
+function defaultArrived(date, est) {
+  const today = isoToday();
+  if (est) return est < today;   // estimated delivery date has passed
+  if (date) return (new Date(today) - new Date(date)) / 86400000 > 21;
+  return false;
+}
+
+async function previewImport(payload) {
+  await loadTcgData();
+  if (!tcgData) { alert("TCGplayer data isn't available right now, so the import can't match card versions. Try again later."); return; }
+  if (!payload || payload.from !== 'tcgplayer-orderhistory' || !Array.isArray(payload.orders)) {
+    alert("That doesn't look like an OPTCG import from the TCGplayer bookmark.");
+    return;
+  }
+  const known = new Set(importedOrders);
+  const seen = new Set();
+  const fresh = [];
+  let already = 0;
+  payload.orders.forEach(o => {
+    if (!o || typeof o.k !== 'string' || !/^[0-9a-f]{8,64}$/.test(o.k) || seen.has(o.k)) return;
+    seen.add(o.k);
+    if (known.has(o.k)) { already++; return; }
+    const date = ISO_DATE.test(o.d) ? o.d : '', est = ISO_DATE.test(o.e) ? o.e : '';
+    const lines = [], skipped = [];
+    (Array.isArray(o.i) ? o.i : []).forEach((it, idx) => {
+      if (!Array.isArray(it)) return;
+      const [pid, qtyRaw, priceRaw, name] = it;
+      const qty = Math.floor(Number(qtyRaw));
+      if (!(qty > 0)) return;
+      const v = tcgByPid.get(Number(pid));
+      if (!v || !VALID_ID.test(v.num)) { skipped.push({ qty, name: String(name || 'Unknown item').slice(0, 120) }); return; }
+      const price = priceRaw == null ? NaN : Number(priceRaw);
+      lines.push({ key: `${o.k}:${Number(pid)}:${idx}`, order: o.k, date, est, id: v.num, pid: Number(pid), qty,
+        price: Number.isFinite(price) ? Math.round(price * 100) / 100 : null, arrived: false, removed: false });
+    });
+    fresh.push({ k: o.k, date, est, status: String(o.s || '').replace(/:$/, '').slice(0, 60), lines, skipped, arrived: defaultArrived(date, est) });
+  });
+  fresh.sort((a, b) => b.date.localeCompare(a.date));
+  importDraft = { fresh, already };
+  renderImportPreview();
+}
+
+function importSetArrived(i, on) { if (importDraft && importDraft.fresh[i]) { importDraft.fresh[i].arrived = on; renderImportPreview(); } }
+function importSetAll(on) { if (importDraft) { importDraft.fresh.forEach(o => { o.arrived = on; }); renderImportPreview(); } }
+
+function renderImportPreview() {
+  const el = document.getElementById('import-preview');
+  if (!importDraft) { el.innerHTML = ''; return; }
+  const { fresh, already } = importDraft;
+  const cards = fresh.reduce((s, o) => s + o.lines.reduce((t, l) => t + l.qty, 0), 0);
+  const paid = fresh.reduce((s, o) => s + o.lines.reduce((t, l) => t + (l.price != null ? l.price * l.qty : 0), 0), 0);
+  const arrivedN = fresh.filter(o => o.arrived).length;
+  if (!fresh.length) {
+    el.innerHTML = `<p class="shop-total">Nothing new to import.</p><p class="meta">${already} order${already === 1 ? ' was' : 's were'} already imported earlier.</p>`;
+    return;
+  }
+  el.innerHTML = `<p class="shop-total">${fresh.length} new order${fresh.length > 1 ? 's' : ''} · ${cards} cards · ${money(paid)} paid</p>
+    <p class="meta">${already ? `${already} order${already > 1 ? 's' : ''} already imported earlier ${already > 1 ? 'are' : 'is'} skipped. ` : ''}
+    Ticked orders go straight into the collection; the rest go to <strong>In the mail</strong>. Orders whose estimated
+    delivery date has passed are ticked for you. ${arrivedN} of ${fresh.length} are ticked.
+    <button onclick="importSetAll(true)">Tick all</button> <button onclick="importSetAll(false)">Untick all</button></p>` +
+    fresh.map((o, i) => `<div class="imp-order">
+      <label class="imp-head"><input type="checkbox" ${o.arrived ? 'checked' : ''} onchange="importSetArrived(${i}, this.checked)">
+        <span><strong>${esc(fmtDate(o.date) || 'Unknown date')}</strong> · ${o.arrived ? 'arrived' : 'in the mail'}${o.est ? ` · est. ${esc(fmtDate(o.est))}` : ''}${o.status ? ` · ${esc(o.status)}` : ''}</span></label>` +
+      o.lines.map(l => `<div class="imp-line">${l.qty}x ${esc(l.id)} ${esc(versionName(l.id, l.pid))} · ${money(l.price)}${l.qty > 1 && l.price != null ? ` each (${money(l.price * l.qty)})` : ''}</div>`).join('') +
+      o.skipped.map(s => `<div class="imp-line meta">skipped: ${s.qty}x ${esc(s.name)} (not a One Piece single we know)</div>`).join('') +
+      `</div>`).join('') +
+    `<div style="margin-top:12px; display:flex; gap:6px; flex-wrap:wrap;">
+      <button class="active" onclick="confirmImport()">Add ${fresh.length} order${fresh.length > 1 ? 's' : ''} to the collection</button>
+      <button onclick="importDraft = null; renderImportPreview()">Cancel</button></div>`;
+}
+
+function confirmImport() {
+  const d = importDraft;
+  if (!d || !d.fresh.length) return;
+  const ids = [];
+  d.fresh.forEach(o => {
+    o.lines.forEach(l => { purchases.push({ ...l, arrived: o.arrived }); ids.push(l.id); });
+    importedOrders.push(o.k);   // remembered even if every item was skipped, so it isn't offered again
+  });
+  purchases = cleanPurchases(purchases);
+  importedOrders = cleanOrders(importedOrders);
+  const n = d.fresh.length;
+  importDraft = null;
+  renderImportPreview();
+  closeImport();
+  collectionChanged(ids);
+  if (confirm(`Imported ${n} order${n > 1 ? 's' : ''}. Save the shared collection now?`)) saveCollection();
+}
 
 function collectState() {
   return {

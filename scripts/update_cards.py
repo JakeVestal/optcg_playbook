@@ -253,7 +253,7 @@ def parse_official_page(page):
     """Yield one normalized card dict per <dl class="modalCol"> on an official card list page."""
     for cid, block in re.findall(r'<dl class="modalCol" id="([^"]+)">(.*?)</dl>', page, re.S):
         info_m = re.search(r'<div class="infoCol">(.*?)</div>', block, re.S)
-        if not info_m or not re.fullmatch(r"[A-Za-z0-9_-]{1,40}", cid):
+        if not info_m or not re.fullmatch(r"[A-Z]{1,4}\d{0,3}-\d{1,4}(?:_[pr]\d{1,2})?", cid):
             print(f"  skipped malformed card block {cid!r}")
             continue
         info = re.findall(r"<span>(.*?)</span>", info_m.group(1))

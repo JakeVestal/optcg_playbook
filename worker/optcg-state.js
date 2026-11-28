@@ -3,8 +3,12 @@
 //
 // Deploy: paste this file into the Worker in the Cloudflare dashboard (or `wrangler deploy`).
 // Secrets (Settings → Variables and Secrets, type "Secret"):
-//   PASSWORD      the save/load password
-//   GITHUB_TOKEN  fine-grained token, ONLY this repo, permission "Contents: Read and write"
+//   PASSWORD      the save/load password. Use a long random one (20+ characters) that is not used
+//                 anywhere else: anyone who has it can overwrite saved states and the collection.
+//   GITHUB_TOKEN  fine-grained token: ONLY this repo, ONLY "Contents: Read and write" (plus the
+//                 automatic "Metadata: Read"), with an expiry date. This code only ever writes
+//                 saved_states/<name>.json, but the token itself could change any file in the
+//                 repo, including the site and the bookmarklet, so never put it anywhere else.
 //
 // API (all JSON, all POST so the password never appears in a URL or access log):
 //   {action:"save",   password, name, state}  -> {ok, name}
@@ -97,7 +101,10 @@ export default {
 
     const { password, name, state } = body || {};
     const action = body?.action || (state ? "save" : "");
-    if (!env.PASSWORD || !safeEqual(password, env.PASSWORD)) return json(request, { error: "bad password" }, 401);
+    if (!env.PASSWORD || !safeEqual(password, env.PASSWORD)) {
+      await new Promise(r => setTimeout(r, 1000));   // slow down password guessing
+      return json(request, { error: "bad password" }, 401);
+    }
     if (!name || typeof name !== "string") return json(request, { error: "missing name" }, 400);
 
     const safeName = name.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 64);

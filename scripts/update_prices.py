@@ -17,7 +17,7 @@ Each product is [productId, name, group abbreviation, marketPrice or null].
 Image: https://tcgplayer-cdn.tcgplayer.com/product/{productId}_200w.jpg
 Mass Entry line: "{qty}-{productId}"
 """
-import json, sys, time, urllib.request, urllib.error
+import json, re, sys, time, urllib.request, urllib.error
 from pathlib import Path
 
 BASE = "https://tcgcsv.com"
@@ -27,6 +27,7 @@ HEADERS = {"User-Agent": "optcg-playbook/1.0"}
 DELAY = 0.25           # tcgcsv asks for a pause between requests
 MAX_FAILED_GROUPS = 0.10
 MIN_KEEP_RATIO = 0.90  # refuse to write if we'd lose >10% of products
+CARD_NUMBER = r"[A-Z]{1,4}\d{0,3}-\d{1,4}"   # e.g. OP18-031, ST01-001, P-038
 
 
 def get(path, as_json=True):
@@ -109,10 +110,15 @@ def main():
             by_pid.setdefault(r["productId"], []).append(r)
         for p in products:
             num = card_number(p)
-            if not num:  # sealed product, DON!! cards, etc.
+            pid = p.get("productId")
+            if not num or not re.fullmatch(CARD_NUMBER, num):  # sealed product, DON!! cards, etc.
                 continue
-            cards.setdefault(num, []).append(
-                [p["productId"], p.get("name") or "", abbr, pick_price(by_pid.get(p["productId"], []))])
+            if not isinstance(pid, int) or isinstance(pid, bool) or pid <= 0:
+                continue
+            price = pick_price(by_pid.get(pid, []))
+            if not isinstance(price, (int, float)) or isinstance(price, bool):
+                price = None
+            cards.setdefault(num, []).append([pid, str(p.get("name") or "")[:200], str(abbr)[:40], price])
             n_products += 1
 
     if len(failed) > len(groups) * MAX_FAILED_GROUPS:

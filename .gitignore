@@ -1,4 +1,6 @@
 .mcp.json
 .idea/workspace.xml
 *.csv.tmp
+# The TCGplayer import bookmarklet runs inside the logged-in TCGplayer session: keep it local only.
+/tools/
 __pycache__/
