@@ -283,6 +283,7 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
         <button class="secondary" onclick="saveCollection()">Save Collection</button>
         <button class="secondary" onclick="reloadCollection()">Reload</button>
         <button class="secondary" onclick="openImport()">Import TCGplayer orders</button>
+        <button class="secondary" onclick="openViewCollection()">View collection</button>
         <button class="secondary" id="specify-btn" onclick="openSpecify()" title="Step through cards whose version isn't recorded yet">Specify versions</button>
       </div>
       <div id="owned-list"></div>
@@ -346,6 +347,25 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
     <div class="shop-total" id="shop-total"></div>
     <div class="shop-grid" id="shop-grid"></div>
     <p class="meta" id="shop-prices" style="margin-top:10px;"></p>
+  </div>
+</div>
+
+<div class="modal" id="view-modal" onclick="closeViewCollection()" style="overflow-y:auto; align-items:flex-start; padding-top:40px;">
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; max-width:1100px; width:94%;" onclick="event.stopPropagation()">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+      <h3 style="margin:0; color:var(--gold);">Our collection</h3>
+      <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+        <span class="meta">Sort:</span>
+        <button data-sort="color" onclick="setViewSort('color')">Color</button>
+        <button data-sort="price-desc" onclick="setViewSort('price-desc')">Price ↓</button>
+        <button data-sort="price-asc" onclick="setViewSort('price-asc')">Price ↑</button>
+        <button data-sort="id" onclick="setViewSort('id')">Card number</button>
+        <button onclick="closeViewCollection()">Close</button>
+      </div>
+    </div>
+    <p class="shop-total" id="view-total"></p>
+    <div class="shop-grid" id="view-grid"></div>
+    <p class="meta" id="view-note" style="margin-top:10px;"></p>
   </div>
 </div>
 
@@ -1377,6 +1397,58 @@ const fmtDate = iso => {
   return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 };
 const isoToday = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+
+// ---------- View collection: every owned card + version with image, quantity and market price.
+let viewSort = 'color';
+const COLOR_ORDER = ['Red', 'Green', 'Blue', 'Purple', 'Black', 'Yellow'];
+async function openViewCollection() {
+  document.getElementById('view-modal').classList.add('open');
+  document.getElementById('view-grid').innerHTML = '<div class="meta">Loading…</div>';
+  await loadTcgData();
+  renderViewCollection();
+}
+function closeViewCollection() { document.getElementById('view-modal').classList.remove('open'); }
+function setViewSort(k) { viewSort = k; renderViewCollection(); }
+
+function renderViewCollection() {
+  const rows = Object.entries(ownedMap()).map(([k, qty]) => {
+    const { id, pid } = splitKey(k);
+    const num = baseId(id);
+    const card = cardById(mainIdByBase[num]) || (window.cardVariants?.[num] || [])[0];
+    const v = pid ? tcgByPid.get(pid) : null;
+    const std = !pid ? defaultVersion(tcgVersions(num)) : null;   // unspecified: priced as the standard version
+    const price = v ? v.price : std ? std.price : null;
+    const colors = (card && card.colors || '').split('|').filter(Boolean);
+    return { num, pid, qty, card, name: v ? v.name : (card ? card.name : num), abbr: v ? v.abbr : '', price, estimated: !pid && price != null, colors };
+  });
+  const colorRank = r => r.colors.length ? Math.min(...r.colors.map(c => { const i = COLOR_ORDER.indexOf(c); return i < 0 ? 99 : i; })) + (r.colors.length > 1 ? 0.5 : 0) : 100;
+  const byPrice = (a, b) => (a.price ?? -1) - (b.price ?? -1);
+  rows.sort({
+    'color': (a, b) => colorRank(a) - colorRank(b) || a.colors.join('/').localeCompare(b.colors.join('/')) || a.num.localeCompare(b.num),
+    'price-desc': (a, b) => byPrice(b, a) || a.num.localeCompare(b.num),
+    'price-asc': (a, b) => (a.price ?? Infinity) - (b.price ?? Infinity) || a.num.localeCompare(b.num),
+    'id': (a, b) => a.num.localeCompare(b.num) || (a.pid || 0) - (b.pid || 0),
+  }[viewSort]);
+  document.querySelectorAll('#view-modal [data-sort]').forEach(b => b.classList.toggle('active', b.dataset.sort === viewSort));
+  const cards = rows.reduce((s, r) => s + r.qty, 0);
+  const value = rows.reduce((s, r) => s + (r.price != null ? r.price * r.qty : 0), 0);
+  const unpriced = rows.filter(r => r.price == null).reduce((s, r) => s + r.qty, 0);
+  document.getElementById('view-total').textContent = cards
+    ? `${cards} cards · ${rows.length} different versions · market value ${money(value)}` + (unpriced ? ` (+${unpriced} without a price)` : '')
+    : '';
+  document.getElementById('view-grid').innerHTML = rows.map(r => {
+    const img = r.pid
+      ? `<img src="${tcgImg(r.pid)}" alt="${esc(r.name)}" loading="lazy" onclick="openModal('${tcgImg(r.pid, true)}')">`
+      : `<img src="${proxyImg(r.num)}" alt="${esc(r.name)}" loading="lazy" onerror="this.onerror=null;this.src='${officialImg(r.num)}'" onclick="openModal(this.src)">`;
+    return `<div class="shop-tile"><span class="qty">×${r.qty}</span>${img}
+      <div class="nm">${esc(r.name)}</div>
+      <div class="meta">${esc(r.num)}${r.abbr ? ' · ' + esc(r.abbr) : ''} · ${esc(r.colors.join('/') || '—')}</div>
+      <div>${money(r.price)}${r.estimated ? ' <span class="meta">(standard version; version not specified)</span>' : ''}${r.price != null && r.qty > 1 ? ` · ${money(r.price * r.qty)}` : ''}</div></div>`;
+  }).join('') || '<div class="meta">The collection is empty. Cards in the mail show up here once they are marked Arrived.</div>';
+  document.getElementById('view-note').innerHTML = tcgData
+    ? `Market prices from TCGplayer via <a href="https://tcgcsv.com" target="_blank" rel="noopener">tcgcsv.com</a>, as of ${esc(String(tcgData.updated || '').slice(0, 10))}.`
+    : 'TCGplayer prices are unavailable right now.';
+}
 
 function renderOwned() {
   const m = ownedMap();

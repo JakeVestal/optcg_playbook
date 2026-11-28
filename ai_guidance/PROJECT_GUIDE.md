@@ -165,6 +165,12 @@ Everything else is a static file that the nightly job refreshes.
     latest copy.
   - **Unsaved changes:** the panel shows "Unsaved changes", and leaving the page asks for
     confirmation.
+- **View collection** (a Collection panel button): a popup grid of every owned card and version
+  (from `ownedMap()`), showing image, quantity, TCGplayer market price and line total, plus a
+  header with cards, versions and total market value. It sorts by color (Red, Green, Blue,
+  Purple, Black, Yellow, with multicolor cards after each single color), price ↓, price ↑ or card
+  number. Copies with no version are priced as the standard version and labeled that way. Cards
+  in the mail aren't shown until they've arrived.
 - **Specify versions (N)** (a Collection panel button; N = copies without a version):
   - **What it does:** steps through every card number that has "version not specified" copies,
     using the shopping picker in "specify" mode. Counters are capped at the number of unspecified
