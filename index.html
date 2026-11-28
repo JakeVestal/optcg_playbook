@@ -420,7 +420,7 @@ if (window.top !== window.self) {
   try { window.top.location = window.self.location.href; } catch (e) { /* stay hidden */ }
 }
 let allCards = [];
-let table = [];   // [{id, qty}] cards being considered for the deck
+let table = [];   // [{id, qty, pid?}] cards being considered; pid = a specific version (alt-art upgrade)
 let hideIn = new Set();   // 'deck' | 'table' | 'owned' | 'mail': hide cards already in those lists
 let mainIdByBase = {};    // base card number -> id of the card shown in the main list
 let owned = [];            // manual collection changes [{id, pid?, qty}] (see "Shared collection")
@@ -731,8 +731,32 @@ function bump(list, id, delta) {
 // Tournament rules are WARNINGS only; nothing is ever blocked.
 function addToDeck(id) { deck = bump(deck, id, 1); renderDeck(); afterListChange(id); }
 function removeFromDeck(id) { deck = bump(deck, id, -1); renderDeck(); afterListChange(id); }
-function addToTable(id) { if (!qtyOf(table, id)) table = bump(table, id, 1); renderTable(); afterListChange(id); }
-function removeFromTable(id) { table = table.filter(d => d.id !== id); renderTable(); afterListChange(id); }
+function addToTable(id) {
+  if (!table.some(d => d.id === id && !d.pid)) table.push({ id, qty: 1 });
+  renderTable(); afterListChange(id);
+}
+// An alt-art "upgrade": a specific version you'd like (from View Alt Art).
+function addVersionToTable(num, pid) {
+  if (!table.some(d => baseId(d.id) === num && d.pid === pid)) table.push({ id: num, qty: 1, pid });
+  renderTable(); afterListChange(num);
+  if (document.getElementById('alt-modal').classList.contains('open')) renderAltArts();
+}
+function removeFromTable(id, pid = null) {
+  table = table.filter(d => !(d.id === id && (d.pid || null) === (pid || null)));
+  renderTable(); afterListChange(id);
+  if (document.getElementById('alt-modal').classList.contains('open')) renderAltArts();
+}
+function cleanTable(list) {
+  const seen = new Set();
+  return (Array.isArray(list) ? list : []).map(d => ({
+    id: String(d && d.id || ''),
+    pid: d && Number.isSafeInteger(d.pid) && d.pid > 0 ? d.pid : null
+  })).filter(d => {
+    const k = d.id + '|' + (d.pid || '');
+    if (!VALID_ID.test(d.id) || seen.has(k)) return false;
+    seen.add(k); return true;
+  }).map(d => (d.pid ? { id: d.id, qty: 1, pid: d.pid } : { id: d.id, qty: 1 }));
+}
 function tableToDeck(id) { addToDeck(id); }
 
 function deckWarnings() {
@@ -784,9 +808,10 @@ function renderDeck() {
 function renderTable() {
   document.getElementById('table-count').textContent = table.length;
   document.getElementById('table-list').innerHTML = table.map(d => {
-    const c = cardById(d.id);
-    return listRow(`${esc(d.id)} ${c ? esc(c.name) : ''}`,
-      `<button onclick="tableToDeck('${esc(d.id)}')" title="Add one copy to the deck">+Deck</button><button onclick="removeFromTable('${esc(d.id)}')" title="Remove from table">×</button>`);
+    const name = d.pid ? versionName(d.id, d.pid) : (cardById(d.id) || {}).name || '';
+    return `<div class="list-row"><span class="lbl" title="${esc(`${d.id} ${name}${d.pid ? ' (upgrade)' : ''}`)}">${esc(d.id)} ${esc(name)}${d.pid ? ' <span class="meta">(upgrade)</span>' : ''}</span>` +
+      (d.pid ? '' : `<button onclick="tableToDeck('${esc(d.id)}')" title="Add one copy to the deck">+Deck</button>`) +
+      `<button onclick="removeFromTable('${esc(d.id)}', ${d.pid || 'null'})" title="Remove from table">×</button></div>`;
   }).join('') || '<div style="color:var(--muted);font-size:0.8em;">Empty: use +Table on a card</div>';
 }
 
@@ -796,6 +821,7 @@ function shoppingNeeds(includeTable) {
   const want = {};
   deck.forEach(d => { const b = baseId(d.id); want[b] = (want[b] || 0) + d.qty; });
   if (includeTable) table.forEach(d => {
+    if (d.pid) return;   // version upgrades are handled by shoppingUpgrades()
     const b = baseId(d.id);
     const max = isLeader(cardById(d.id)) ? 1 : 4;
     want[b] = Math.max(want[b] || 0, max);
@@ -806,6 +832,20 @@ function shoppingNeeds(includeTable) {
     .map(([b, n]) => ({ id: b, need: n - (counts.owned[b] || 0) - (counts.mail[b] || 0), card: cardById(b) || (window.cardVariants?.[b] || [])[0] }))
     .filter(x => x.need > 0)
     .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+// Alt-art upgrades on the Table (entries with a pid): want as many copies of that exact version as
+// the deck has (4 if the card isn't in the deck, 1 for a Leader), minus copies of that version
+// already owned or in the mail.
+function shoppingUpgrades() {
+  const inDeck = tally(deck);
+  return table.filter(d => d.pid).map(d => {
+    const num = baseId(d.id);
+    const card = cardById(mainIdByBase[num]) || (window.cardVariants?.[num] || [])[0];
+    const want = Math.min(4, inDeck[num] || (isLeader(card) ? 1 : 4));
+    const have = (ownedByVersion(num)[d.pid] || 0) + (mailByVersion(num)[d.pid] || 0);
+    return { id: num, pid: d.pid, need: want - have, card };
+  }).filter(u => u.need > 0);
 }
 
 // ---------- TCGplayer data: data/tcgplayer.json, built nightly by scripts/update_prices.py from tcgcsv.com
@@ -864,10 +904,16 @@ let shop = null;
 
 async function openShoppingList(includeTable) {
   const all = shoppingNeeds(includeTable);
+  const upgrades = includeTable ? shoppingUpgrades() : [];
+  // copies bought as an upgrade also count toward the deck copies still needed
+  const up = {};
+  upgrades.forEach(u => { up[u.id] = (up[u.id] || 0) + u.need; });
+  const base = all.map(x => ({ ...x, need: x.need - (up[x.id] || 0) })).filter(x => x.need > 0);
   shop = {
     includeTable,
-    needs: all.filter(x => !x.id.startsWith('P-')),   // promo cards are left out of Mass Entry
-    promos: all.filter(x => x.id.startsWith('P-')),
+    needs: base.filter(x => !x.id.startsWith('P-')),   // promo cards are left out of Mass Entry
+    promos: base.filter(x => x.id.startsWith('P-')),
+    upgrades,
     picks: null
   };
   document.getElementById('shop-title').textContent = 'Shopping list: ' + (includeTable ? 'Deck + Table' : 'Deck');
@@ -878,10 +924,19 @@ async function openShoppingList(includeTable) {
 }
 
 function renderShop(loading) {
-  const { needs, picks, promos } = shop;
-  const total = needs.reduce((s, x) => s + x.need, 0);
-  document.getElementById('shop-summary').textContent = needs.length
-    ? `${total} cards to buy across ${needs.length} card numbers.` + (promos.length ? ` Promo cards left out: ${promos.map(p => p.id).join(', ')}.` : '')
+  const { needs, promos, upgrades } = shop;
+  // With upgrades on the list, everything uses product codes (standard version unless picked),
+  // so Mass Entry never gets a mix of the two formats.
+  let picks = shop.picks;
+  if (!picks && upgrades.length && tcgData) {
+    picks = {};
+    needs.forEach(x => { const d = defaultVersion(tcgVersions(x.id)); if (d) picks[x.id] = [{ pid: d.pid, qty: x.need }]; });
+  }
+  const total = needs.reduce((s, x) => s + x.need, 0) + upgrades.reduce((s, u) => s + u.need, 0);
+  const n = needs.length + upgrades.length;
+  document.getElementById('shop-summary').textContent = n
+    ? `${total} cards to buy across ${n} lines` + (upgrades.length ? `, including ${upgrades.length} alt-art upgrade${upgrades.length > 1 ? 's' : ''} from the Table` : '') + '.' +
+      (promos.length ? ` Promo cards left out: ${promos.map(p => p.id).join(', ')}.` : '')
     : (promos.length ? `Only promo cards are missing (${promos.map(p => p.id).join(', ')}); those are left out of Mass Entry.` : 'You already own everything on this list.');
 
   // Text block: name format until alt arts are chosen, then {qty}-{productId}
@@ -890,6 +945,7 @@ function renderShop(loading) {
     if (picks && picks[x.id]) picks[x.id].forEach(p => lines.push(`${p.qty}-${p.pid}`));
     else lines.push(massEntryLine(x.need, x.id, x.card ? x.card.name : ''));
   });
+  upgrades.forEach(u => lines.push(`${u.need}-${u.pid}`));
   document.getElementById('shop-text').value = lines.join('\n');
   shop.sendUrl = MASS_ENTRY_URL + '&c=' + encodeURIComponent(lines.join('||'));
   document.getElementById('shop-mode').textContent = picks
@@ -929,8 +985,17 @@ function renderShop(loading) {
         <div>${money(v.price)} each${v.price != null && p.qty > 1 ? ` · ${money(v.price * p.qty)}` : ''}</div></div>`);
     });
   });
+  upgrades.forEach(u => {
+    const v = tcgByPid.get(u.pid);
+    if (!v) return;
+    if (v.price == null) unpriced += u.need; else sum += v.price * u.need;
+    tiles.push(`<div class="shop-tile chosen"><span class="qty">×${u.need}</span>
+      <img src="${tcgImg(u.pid)}" alt="${esc(v.name)}" loading="lazy" onclick="openModal('${tcgImg(u.pid, true)}')">
+      <div class="nm">${esc(v.name)} <span class="meta">(upgrade)</span></div><div class="meta">${esc(u.id)} · ${esc(v.abbr)}</div>
+      <div>${money(v.price)} each${v.price != null && u.need > 1 ? ` · ${money(v.price * u.need)}` : ''}</div></div>`);
+  });
   grid.innerHTML = tiles.join('') || '';
-  document.getElementById('shop-total').textContent = needs.length
+  document.getElementById('shop-total').textContent = (needs.length || upgrades.length)
     ? `Total market price: ${money(sum)}` + (unpriced ? ` (+${unpriced} card${unpriced > 1 ? 's' : ''} with no market price)` : '')
     : '';
   note.innerHTML = `Market prices from TCGplayer via <a href="https://tcgcsv.com" target="_blank" rel="noopener">tcgcsv.com</a>, as of ${esc((tcgData.updated || '').slice(0, 10))}.`;
@@ -1726,7 +1791,7 @@ function applyState(s) {
   if (!s) return;
   setAside = new Set((s.setAside || []).filter(id => VALID_ID.test(id)));
   deck = cleanList(s.deck);
-  table = cleanList(s.table);
+  table = cleanTable(s.table);
   // s.owned (from states saved before the collection was split off) is ignored on purpose
   activeBlocks = new Set(s.activeBlocks || []);
   activeColors = new Set(s.activeColors || []);
@@ -1810,41 +1875,49 @@ async function loadState() {
 }
 
 
-function viewAltArts() {
+// View Alt Art (Deck panel): every TCGplayer version of each card in the deck, with market price,
+// what you already own / have in the mail, a "+Table" button to mark it as an upgrade you'd like,
+// and a link to the product on TCGplayer.
+async function viewAltArts() {
   if (!deck.length) { alert("Deck is empty"); return; }
-  const content = document.getElementById('alt-content');
-  content.innerHTML = '';
-  const seen = new Set();
-  let any = false;
-  deck.forEach(d => {
-    const base = d.id.replace(/_[pr]\d+$/, '');
-    if (seen.has(base)) return;
-    seen.add(base);
-    const vars = (window.cardVariants && window.cardVariants[base]) || [];
-    const alts = vars.filter(v => /_[pr]\d+$/.test(v.id));
-    if (!alts.length) return;
-    any = true;
-    const group = document.createElement('div');
-    group.style.cssText = 'flex:1 1 200px; background:#161b22; border:1px solid var(--border); border-radius:8px; padding:8px;';
-    group.innerHTML = `<div style="font-size:0.85em; margin-bottom:6px; color:var(--muted);">${esc(base)} · ${esc(vars[0]?.name || '')}</div>`;
-    const imgs = document.createElement('div');
-    imgs.style.cssText = 'display:flex; flex-wrap:wrap; gap:6px;';
-    alts.forEach(a => {
-      const imgSrc = proxyImg(a.id);
-      const img = document.createElement('img');
-      img.loading = 'lazy';
-      img.src = imgSrc;
-      img.onerror = () => { img.onerror = null; img.src = officialImg(a.id); };
-      img.alt = a.id;
-      img.style.cssText = 'width:80px; height:auto; border-radius:4px; cursor:pointer; border:1px solid #444;';
-      img.onclick = () => openModal(imgSrc);
-      imgs.appendChild(img);
-    });
-    group.appendChild(imgs);
-    content.appendChild(group);
-  });
-  if (!any) content.innerHTML = '<div style="color:var(--muted);">No alt arts found for cards in deck.</div>';
+  document.getElementById('alt-content').innerHTML = '<div class="meta">Loading TCGplayer versions…</div>';
   document.getElementById('alt-modal').classList.add('open');
+  await loadTcgData();
+  renderAltArts();
+}
+function renderAltArts() {
+  const content = document.getElementById('alt-content');
+  if (!tcgData) { content.innerHTML = '<div class="meta">TCGplayer data is unavailable right now.</div>'; return; }
+  const inDeck = tally(deck);
+  const groups = [];
+  [...new Set(deck.map(d => baseId(d.id)))].forEach(num => {
+    const vs = orderedVersions(num);
+    if (vs.length < 2) return;
+    const def = defaultVersion(vs);
+    const card = cardById(mainIdByBase[num]) || (window.cardVariants?.[num] || [])[0];
+    const have = ownedByVersion(num), mail = mailByVersion(num);
+    const tiles = vs.map(v => {
+      const onTable = table.some(d => baseId(d.id) === num && d.pid === v.pid);
+      const status = [have[v.pid] ? `own ${have[v.pid]}` : '', mail[v.pid] ? `in the mail ${mail[v.pid]}` : ''].filter(Boolean).join(' · ');
+      return `<div class="shop-tile${onTable ? ' chosen' : ''}">
+        <img src="${tcgImg(v.pid)}" alt="${esc(v.name)}" loading="lazy" onclick="openModal('${tcgImg(v.pid, true)}')">
+        <div class="nm">${esc(v.name)}${v === def ? ' <span class="meta">(standard)</span>' : ''}</div>
+        <div class="meta">${esc(v.abbr)}${status ? ' · ' + esc(status) : ''}</div>
+        <div>${money(v.price)}</div>
+        <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">
+          ${onTable
+            ? `<button onclick="removeFromTable('${num}', ${v.pid})" title="Remove from the Table">On table ✓</button>`
+            : `<button onclick="addVersionToTable('${num}', ${v.pid})" title="Put this version on the Table">+Table</button>`}
+          <button onclick="window.open('https://www.tcgplayer.com/product/${v.pid}', '_blank', 'noopener')" title="Open this version on TCGplayer">TCGplayer ↗</button>
+        </div></div>`;
+    }).join('');
+    groups.push(`<div style="flex:1 1 100%;">
+      <div class="meta" style="margin:8px 0 4px;"><strong style="color:var(--text);">${esc(num)} ${esc(card ? card.name : '')}</strong> · ${inDeck[num]}x in deck</div>
+      <div class="shop-grid">${tiles}</div></div>`);
+  });
+  content.innerHTML = groups.length
+    ? `<p class="meta" style="flex:1 1 100%; margin:0;">Put the versions you'd like on the Table, then use <strong>Shopping list: Deck + Table</strong> to buy them on TCGplayer.</p>` + groups.join('')
+    : '<div class="meta">None of the cards in the deck have alternate art versions on TCGplayer.</div>';
 }
 
 function closeAltModal() {

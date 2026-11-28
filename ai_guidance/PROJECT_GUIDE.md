@@ -137,7 +137,8 @@ Everything else is a static file that the nightly job refreshes.
   - exactly 50 main-deck cards;
   - no more than 4 copies per card number, counting alt arts together;
   - every card shares at least one color with the Leader.
-- **Table panel:** cards you're considering. Each entry has buttons for +Deck and remove.
+- **Table panel:** cards you're considering, `[{id, qty: 1, pid?}]`. Entries with a `pid` are alt-art
+  upgrades and show "(upgrade)". Each entry has +Deck (plain entries only) and remove.
 - **Collection panel:** the **one shared household collection**, tracked per card **and version**
   (the version is the TCGplayer product id, `pid`).
   - **Storage:** `saved_states/collection.json`, version 2:
@@ -229,7 +230,14 @@ Everything else is a static file that the nightly job refreshes.
     market price for the order.
   - **Buttons:** "Send to TCGplayer" (Mass Entry prefilled through the `c=` parameter with `||`
     between lines; TCGplayer doesn't document this), Copy, and Open Mass Entry.
-- **Alt-art viewer:** shows the `_p`/`_r` images for the cards in the deck.
+- **View Alt Art** (Deck panel): for each card in the deck with more than one TCGplayer version,
+  a tile per version showing image, market price and how many you own or have in the mail, plus
+  **+Table** (an "upgrade": a Table entry with a `pid`) and a **TCGplayer ↗** product link.
+- **Upgrades in the shopping list:** Deck + Table adds one line per upgrade, using the exact
+  product (`{qty}-{pid}`). The quantity is the copies of the card in the deck (4 if it isn't in the
+  deck, 1 for a Leader), minus copies of that version owned or in the mail. Upgrade copies also
+  count toward the deck copies needed. When upgrades are on the list, every line uses product
+  codes, with the standard version unless alt arts are picked.
 - **Save/Load State:** password-protected, through the Worker
   `optcg-state.46jwnf9v56.workers.dev`. Every call is a POST with
   `{action: save|load|exists, password, name, state?}` (see `worker/optcg-state.js`). State holds: setAside, deck, table, blocks, colors, cats, tags,
