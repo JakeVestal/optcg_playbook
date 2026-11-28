@@ -118,6 +118,19 @@ def main():
     if len(failed) > len(groups) * MAX_FAILED_GROUPS:
         print(f"ERROR: {len(failed)}/{len(groups)} groups failed; not writing {OUT}")
         return 1
+    if failed and existing:
+        # Keep the previous products of groups that failed today, rather than dropping them.
+        failed_abbrs = {g.get("abbreviation") or g.get("name") or "" for g in groups if g["groupId"] in failed}
+        have = {p[0] for prods in cards.values() for p in prods}
+        kept = 0
+        for num, prods in existing.get("cards", {}).items():
+            for p in prods:
+                if p[2] in failed_abbrs and p[0] not in have:
+                    cards.setdefault(num, []).append(p)
+                    have.add(p[0])
+                    kept += 1
+        print(f"Kept {kept} products from the previous run for {len(failed)} failed group(s)")
+    n_products = sum(len(prods) for prods in cards.values())
     old_n = sum(len(v) for v in (existing or {}).get("cards", {}).values())
     if old_n and n_products < old_n * MIN_KEEP_RATIO:
         print(f"ERROR: {n_products} products vs {old_n} before; not writing {OUT}")

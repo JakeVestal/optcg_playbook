@@ -70,7 +70,6 @@ button.secondary { background: #2a3650; }
   padding: 10px 12px; margin: 8px 0; display: flex; gap: 10px;
 }
 .card.minimized .card-text { display: none; }
-.card.hidden { display: none !important; }
 .thumb {
   width: 52px; height: 72px; object-fit: cover; border-radius: 4px; cursor: pointer;
   border: 1px solid var(--border); flex-shrink: 0;
@@ -96,7 +95,7 @@ button.secondary { background: #2a3650; }
 .side-item {
   font-size: 0.8em; padding: 4px 0; border-bottom: 1px solid var(--border);
   cursor: pointer;
-}cl
+}
 .side-item:hover { background: #1e2a42; }
 .type-row { display: flex; justify-content: space-between; font-size: 0.8em; padding: 4px 2px; cursor: pointer; border-radius: 4px; }
 .type-row:hover { background: #1e2a42; }
@@ -142,6 +141,8 @@ button.secondary { background: #2a3650; }
 .warnings div::before { content: "⚠ "; }
 .warnings.ok { color: #3fb950; }
 .warnings.ok div::before { content: "✓ "; }
+.warnings.muted { color: var(--muted); }
+.warnings.muted div::before { content: ""; }
 .list-row { display: flex; align-items: center; gap: 4px; font-size: 0.8em; padding: 3px 0; border-bottom: 1px solid var(--border); }
 .list-row .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list-row button { padding: 1px 6px; font-size: 0.85em; border-radius: 8px; }
@@ -277,7 +278,7 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
 
   <div>
     <div class="toolbar" style="margin-top:0;">
-      <input id="search" type="text" placeholder="Search ID, name, or text..." oninput="render(); refreshTypesList()">
+      <input id="search" type="text" placeholder="Search ID, name, or text..." oninput="onSearchInput()">
       <button class="secondary" onclick="clearSearch()">Clear</button>
     </div>
     <div id="cards"></div>
@@ -316,9 +317,9 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
     <textarea class="shop" id="shop-text" readonly></textarea>
     <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
       <button onclick="openAltPicker()">Select alt arts</button>
-      <a id="shop-send" href="#" target="_blank" rel="noopener"><button>Send to TCGplayer</button></a>
+      <button onclick="sendToTcgplayer()">Send to TCGplayer</button>
       <button onclick="copyShop()">Copy</button>
-      <a href="https://www.tcgplayer.com/massentry?productline=One%20Piece%20Card%20Game" target="_blank" rel="noopener"><button>Open Mass Entry</button></a>
+      <button onclick="window.open(MASS_ENTRY_URL, '_blank', 'noopener')">Open Mass Entry</button>
     </div>
     <p class="meta">"Send to TCGplayer" opens Mass Entry already filled in. If it shows up empty, use Copy, then Open Mass Entry, and paste.</p>
     <div class="shop-total" id="shop-total"></div>
@@ -363,7 +364,7 @@ let sortKey = '';
 async function load() {
   const res = await fetch('data/cards.csv');
   const text = await res.text();
-  const parsed = parseCSV(text).slice(1).map(rowToCard).filter(c => c && c.id);
+  const parsed = parseCSV(text).slice(1).map(rowToCard).filter(c => c && VALID_ID.test(c.id));
   const byBase = {};
   const variants = {};
   parsed.forEach(c => {
@@ -377,6 +378,7 @@ async function load() {
     if (!cur || isBase || (!curIsBase && c.id.localeCompare(cur.id, undefined, { numeric: true }) < 0)) byBase[base] = c;
   });
   allCards = Object.values(byBase);
+  cardIndex = new Map(allCards.map(c => [c.id, c]));
   window.cardVariants = variants;
   mainIdByBase = Object.fromEntries(allCards.map(c => [baseId(c.id), c.id]));
   // apply the saved 'default' state (if any) BEFORE the first render, so it never
@@ -457,8 +459,11 @@ function listCounts() { return { deck: tally(deck), table: tally(table), owned: 
 // so the page and the data never disagree.
 // `ignore` names one filter to skip ('types', 'cost', 'power' or 'counter'), used for the
 // counts shown next to that filter's own options.
-function passesFilters(c, ignore = null, counts = listCounts()) {
-  const search = document.getElementById('search').value.toLowerCase();
+function filterContext() {
+  return { search: document.getElementById('search').value.trim().toLowerCase(), counts: listCounts() };
+}
+function passesFilters(c, ignore = null, ctx = filterContext()) {
+  const { search, counts } = ctx;
   if (setAside.has(c.id)) return false;
   if (activeBlocks.size && !activeBlocks.has(c.blockIcon)) return false;
   const colors = (c.colors || '').split('|');
@@ -481,7 +486,7 @@ function passesFilters(c, ignore = null, counts = listCounts()) {
   return true;
 }
 
-function filtered(ignore = null) { const counts = listCounts(); return allCards.filter(c => passesFilters(c, ignore, counts)); }
+function filtered(ignore = null) { const ctx = filterContext(); return allCards.filter(c => passesFilters(c, ignore, ctx)); }
 function visibleCards() { return filtered(); }
 function visibleCardsWithoutTypeFilter() { return filtered('types'); }
 
@@ -531,8 +536,8 @@ function renderDropdown(key) {
   if (!panel.classList.contains('open')) return;
   // counts reflect every other filter, like the Archetypes panel
   const n = {};
-  const counts = listCounts();
-  allCards.forEach(c => { if (passesFilters(c, key, counts)) { const v = RANGE[key].value(c); if (v != null) n[v] = (n[v] || 0) + 1; } });
+  const ctx = filterContext();
+  allCards.forEach(c => { if (passesFilters(c, key, ctx)) { const v = RANGE[key].value(c); if (v != null) n[v] = (n[v] || 0) + 1; } });
   panel.innerHTML = `<div class="dd-head"><span>${RANGE[key].title}</span><button class="secondary" onclick="clearRange('${key}')">Clear</button></div>` +
     rangeOptions(key).map(v => `<label class="type-row${sel.has(v) ? ' selected' : ''}">
       <span><input type="checkbox" ${sel.has(v) ? 'checked' : ''} onchange="toggleRange('${key}','${v}')">${esc(RANGE[key].label(v))}</span>
@@ -566,9 +571,10 @@ function render() {
     div.className = 'card';
     div.dataset.id = c.id;
     const tags = (c.tags || '').split(',').filter(Boolean);
-    const imgSrc = `https://optcg-api.arjunbansal-ai.workers.dev/images/${c.id}`;
+    const imgSrc = proxyImg(c.id);
     div.innerHTML = `
-      <img class="thumb" src="${imgSrc}" alt="${esc(c.name)}" onclick="openModal('${imgSrc}')">
+      <img class="thumb" src="${imgSrc}" alt="${esc(c.name)}" loading="lazy" decoding="async"
+        onerror="this.onerror=null;this.src='${officialImg(c.id)}'" onclick="openModal(this.src)">
       <div class="card-body">
         <div class="card-header">
           <div>
@@ -612,13 +618,20 @@ function renderSetAside() {
   const el = document.getElementById('set-aside-list');
   if (!setAside.size) { el.innerHTML = '<div style="color:var(--muted);">None</div>'; return; }
   el.innerHTML = [...setAside].map(id => {
-    const c = allCards.find(x => x.id === id);
+    const c = cardById(id);
     if (!c) return '';
     return `<div class="side-item" onclick="restoreCard('${id}')">${esc(c.id)} · ${esc(c.name)} · ${esc(c.cost || '?')}c · ${esc(c.colors)}</div>`;
   }).join('');
 }
 
-const cardById = id => allCards.find(x => x.id === id);
+let cardIndex = new Map();
+const cardById = id => cardIndex.get(id);
+// Card ids are only ever letters, digits, "-" and "_" (e.g. OP18-034_p1). Anything else in the
+// CSV or a saved state is rejected, which also keeps ids safe inside onclick="..." attributes.
+const VALID_ID = /^[A-Za-z0-9_-]{1,40}$/;
+// Images: the community proxy first, the official site as a fallback.
+const proxyImg = id => `https://optcg-api.arjunbansal-ai.workers.dev/images/${id}`;
+const officialImg = id => `https://en.onepiece-cardgame.com/images/cardlist/card/${id}.png`;
 const baseId = id => id.replace(/_[pr]\d+$/, '');
 const isLeader = c => c && (c.category || '').toUpperCase() === 'LEADER';
 const qtyOf = (list, id) => (list.find(d => d.id === id) || {}).qty || 0;
@@ -704,10 +717,12 @@ function renderOwned() {
   }).join('') || '<div style="color:var(--muted);font-size:0.8em;">Empty: use +Own on a card</div>';
   const st = document.getElementById('owned-status');
   const dirty = collectionDirty();
-  st.className = 'warnings' + (dirty ? '' : ' ok');
+  st.className = 'warnings' + (dirty ? '' : collectionMeta.updatedAt ? ' ok' : ' muted');
   st.innerHTML = dirty
     ? '<div>Unsaved changes: click Save Collection</div>'
-    : `<div>Saved${collectionMeta.updatedAt ? ' · ' + esc(new Date(collectionMeta.updatedAt).toLocaleString()) : ''}</div>`;
+    : (collectionMeta.updatedAt
+        ? `<div>Saved · ${esc(new Date(collectionMeta.updatedAt).toLocaleString())}</div>`
+        : '<div>Not saved yet</div>');
 }
 
 // Shopping list = wanted − owned, counted per card number (alt arts count as the same card).
@@ -789,8 +804,7 @@ function renderShop(loading) {
     else lines.push(massEntryLine(x.need, x.id, x.card ? x.card.name : ''));
   });
   document.getElementById('shop-text').value = lines.join('\n');
-  document.getElementById('shop-send').href = 'https://www.tcgplayer.com/massentry?productline=' +
-    encodeURIComponent('One Piece Card Game') + '&c=' + encodeURIComponent(lines.join('||'));
+  shop.sendUrl = MASS_ENTRY_URL + '&c=' + encodeURIComponent(lines.join('||'));
   document.getElementById('shop-mode').textContent = picks
     ? 'Alt arts chosen. The list uses TCGplayer product codes ({qty}-{product id}).'
     : 'Showing the standard version of each card. Use "Select alt arts" to choose versions.';
@@ -812,7 +826,7 @@ function renderShop(loading) {
     const vs = tcgVersions(x.id);
     if (!vs.length) {
       tiles.push(`<div class="shop-tile"><span class="qty">×${x.need}</span>
-        <img src="https://optcg-api.arjunbansal-ai.workers.dev/images/${esc(x.id)}" alt="">
+        <img src="${proxyImg(x.id)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${officialImg(x.id)}'">
         <div class="nm">${esc(x.card ? x.card.name : x.id)}</div><div class="meta">${esc(x.id)}</div>
         <div class="meta">Not found on TCGplayer</div></div>`);
       unpriced += x.need;
@@ -840,8 +854,21 @@ function massEntryLine(qty, id, name) {
   const m = baseId(id).match(/^([A-Z]+\d*)-(\d+)$/);
   return m ? `${qty} ${name} [${m[1]}] ${m[2]}` : `${qty} ${name}`;
 }
+const MASS_ENTRY_URL = 'https://www.tcgplayer.com/massentry?productline=' + encodeURIComponent('One Piece Card Game');
+function sendToTcgplayer() { if (shop && shop.sendUrl) window.open(shop.sendUrl, '_blank', 'noopener'); }
 function closeShop() { document.getElementById('shop-modal').classList.remove('open'); }
-function copyShop() { navigator.clipboard.writeText(document.getElementById('shop-text').value).then(() => alert('Copied')); }
+function copyShop() {
+  const ta = document.getElementById('shop-text');
+  copyText(ta.value, 'Copied', () => { ta.focus(); ta.select(); });
+}
+// Clipboard can be refused (permissions, non-secure context); say so instead of failing silently.
+function copyText(text, okMsg, onFail) {
+  if (!navigator.clipboard) { if (onFail) onFail(); alert("Couldn't copy automatically. The text is selected: press Ctrl/Cmd+C."); return; }
+  navigator.clipboard.writeText(text).then(() => alert(okMsg), () => {
+    if (onFail) onFail();
+    alert("Couldn't copy automatically" + (onFail ? '. The text is selected: press Ctrl/Cmd+C.' : '.'));
+  });
+}
 
 // ---------- Alt art picker: one card at a time, choose how many of each version.
 // Nothing changes unless the user reaches "Done"; closing discards the draft.
@@ -933,7 +960,7 @@ function copyDeck() {
   // leader first, as OPTCGSim expects
   const sorted = [...deck].sort((a, b) => isLeader(cardById(b.id)) - isLeader(cardById(a.id)));
   const text = sorted.map(d => `${d.qty}x${d.id}`).join('\n');
-  navigator.clipboard.writeText(text).then(() => alert('Copied ' + deck.reduce((s, d) => s + d.qty, 0) + ' cards (' + deck.length + ' unique)'));
+  copyText(text, 'Copied ' + deck.reduce((s, d) => s + d.qty, 0) + ' cards (' + deck.length + ' unique)');
 }
 
 function refreshTypesList() {
@@ -993,12 +1020,16 @@ function clearBlocks() { activeBlocks.clear(); document.querySelectorAll('#block
 function clearColors() { activeColors.clear(); document.querySelectorAll('#color-filter button').forEach(b => b.classList.remove('active')); render(); refreshTypesList(); }
 function clearCats() { activeCats.clear(); document.querySelectorAll('#cat-filter button').forEach(b => b.classList.remove('active')); render(); refreshTypesList(); }
 function clearTags() { activeTags.clear(); document.querySelectorAll('#tag-filter button').forEach(b => b.classList.remove('active')); render(); refreshTypesList(); }
+// Re-rendering ~3,000 cards on every keystroke is slow; wait for a short pause in typing.
+let searchTimer = null;
+function onSearchInput() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { render(); refreshTypesList(); }, 200);
+}
 function clearSearch() { document.getElementById('search').value = ''; render(); refreshTypesList(); }
 function setSort(k) { sortKey = k; render(); }
 function openModal(src) { document.getElementById('modal-img').src = src; document.getElementById('modal').classList.add('open'); }
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
-
-load();
 
 const WORKER = "https://optcg-state.46jwnf9v56.workers.dev";
 
@@ -1012,9 +1043,15 @@ let collectionBase = [];       // the collection as last loaded or saved by this
 let collectionMeta = {};       // { updatedAt }
 
 const isReservedName = n => n.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase() === COLLECTION_NAME;
+// Keep only well-formed {id, qty} entries (qty a positive whole number).
+function cleanList(list) {
+  return (Array.isArray(list) ? list : [])
+    .map(d => ({ id: String(d && d.id || ''), qty: Math.floor(Number(d && d.qty)) }))
+    .filter(d => VALID_ID.test(d.id) && d.qty > 0);
+}
 const tallyExact = list => { const m = {}; (list || []).forEach(d => { if (d && d.id && d.qty > 0) m[d.id] = (m[d.id] || 0) + d.qty; }); return m; };
 const fromTally = m => Object.entries(m).filter(([, q]) => q > 0).map(([id, qty]) => ({ id, qty })).sort((a, b) => a.id.localeCompare(b.id));
-const normalizeOwned = list => fromTally(tallyExact(list));
+const normalizeOwned = list => fromTally(tallyExact(cleanList(list)));
 
 function collectionDirty() {
   return JSON.stringify(normalizeOwned(owned)) !== JSON.stringify(normalizeOwned(collectionBase));
@@ -1064,6 +1101,16 @@ async function saveCollection() {
     if (res.status === 401) { alert("Save failed: bad password"); return; }
     if (!res.ok && res.status !== 404) { alert("Save failed: " + (data.error || res.status)); return; }
     const theirs = res.ok ? normalizeOwned(data.state && data.state.owned) : [];
+    if (!collectionDirty()) {
+      // Nothing changed here: just adopt the latest shared copy, no save needed.
+      owned = theirs;
+      collectionBase = theirs.map(d => ({ ...d }));
+      if (res.ok) collectionMeta = { updatedAt: data.state.updatedAt || '' };
+      render();
+      refreshTypesList();
+      alert("No changes to save. You're looking at the latest shared collection.");
+      return;
+    }
     const { merged, pulled } = mergeCollections(collectionBase, owned, theirs);
     const state = { owned: merged, updatedAt: new Date().toISOString() };
     ({ res, data } = await workerCall({ action: "save", password, name: COLLECTION_NAME, state }));
@@ -1107,9 +1154,9 @@ function collectState() {
 
 function applyState(s) {
   if (!s) return;
-  setAside = new Set(s.setAside || []);
-  deck = s.deck || [];
-  table = s.table || [];
+  setAside = new Set((s.setAside || []).filter(id => VALID_ID.test(id)));
+  deck = cleanList(s.deck);
+  table = cleanList(s.table);
   // s.owned (from states saved before the collection was split off) is ignored on purpose
   activeBlocks = new Set(s.activeBlocks || []);
   activeColors = new Set(s.activeColors || []);
@@ -1139,8 +1186,7 @@ function applyState(s) {
   refreshTypesList();
 }
 
-// All calls are POST so the password never goes in a URL. If the Worker is still the old
-// version (it answers 400 to actions it doesn't know), fall back to its old GET API.
+// All calls are POST so the password never goes in a URL (see worker/optcg-state.js).
 async function workerCall(body) {
   const res = await fetch(WORKER, {
     method: "POST",
@@ -1160,13 +1206,9 @@ async function saveState() {
   if (isReservedName(name)) { alert('"' + COLLECTION_NAME + '" is reserved for the shared collection. Please pick another name.'); return; }
 
   try {
-    let { res, data } = await workerCall({ action: "exists", password, name });
-    let exists = res.ok && data.exists;
-    if (res.status === 400) {               // old Worker: no "exists" action
-      const check = await fetch(WORKER + "?name=" + encodeURIComponent(name));
-      exists = check.ok;
-    } else if (res.status === 401) { alert("Save failed: bad password"); return; }
-    if (exists && !confirm("A state named '" + name + "' already exists. Overwrite it?")) return;
+    const { res, data } = await workerCall({ action: "exists", password, name });
+    if (res.status === 401) { alert("Save failed: bad password"); return; }
+    if (res.ok && data.exists && !confirm("A state named '" + name + "' already exists. Overwrite it?")) return;
   } catch (e) {
     // ignore check errors and proceed
   }
@@ -1187,11 +1229,7 @@ async function loadState() {
   if (!name) return;
   if (isReservedName(name)) { alert('"' + COLLECTION_NAME + '" is the shared collection, not a saved state. It loads automatically.'); return; }
   try {
-    let { res, data } = await workerCall({ action: "load", password, name });
-    if (res.status === 400) {               // old Worker: no "load" action
-      res = await fetch(WORKER + "?name=" + encodeURIComponent(name));
-      data = await res.json();
-    }
+    const { res, data } = await workerCall({ action: "load", password, name });
     if (res.ok) {
       applyState(data.state);
       alert("Loaded " + data.name);
@@ -1222,9 +1260,11 @@ function viewAltArts() {
     const imgs = document.createElement('div');
     imgs.style.cssText = 'display:flex; flex-wrap:wrap; gap:6px;';
     alts.forEach(a => {
-      const imgSrc = `https://optcg-api.arjunbansal-ai.workers.dev/images/${a.id}`;
+      const imgSrc = proxyImg(a.id);
       const img = document.createElement('img');
+      img.loading = 'lazy';
       img.src = imgSrc;
+      img.onerror = () => { img.onerror = null; img.src = officialImg(a.id); };
       img.alt = a.id;
       img.style.cssText = 'width:80px; height:auto; border-radius:4px; cursor:pointer; border:1px solid #444;';
       img.onclick = () => openModal(imgSrc);
@@ -1254,6 +1294,8 @@ async function loadDefaultState() {
     return false;
   }
 }
+
+load();   // last, so every declaration above exists before the page starts
 
 </script>
 </body>

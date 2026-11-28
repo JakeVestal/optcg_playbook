@@ -18,8 +18,14 @@ A static website (GitHub Pages: https://jakevestal.github.io/optcg_playbook/) fo
 3. **Rules page (`rules.html`)**: the official Bandai Comprehensive Rules, rendered from stored
    text, plus a log of rule changes.
 
-There is no build step or framework, and no backend except two external Cloudflare Workers (see §5).
-Every page is a single hand-written HTML file with inline CSS and JS.
+There is no build step or framework. Every page is a single hand-written HTML file with inline
+CSS and JS. The only live services the page calls are:
+- our Cloudflare Worker `optcg-state` (Save/Load State and Save Collection, see §5);
+- a community image proxy, `optcg-api.arjunbansal-ai.workers.dev/images/{id}`. If it fails, each
+  image falls back to the official `en.onepiece-cardgame.com/images/cardlist/card/{id}.png`.
+- TCGplayer's image CDN (shopping list only).
+
+Everything else is a static file that the nightly job refreshes.
 
 ## 2. Repository map
 
@@ -36,6 +42,8 @@ Every page is a single hand-written HTML file with inline CSS and JS.
 | `data/rules/rule-changes-log.txt` | Append-only log of rule text changes (timestamp, old/new hash, URL). |
 | `data/card-changes-log.txt` | Append-only log of added/removed/changed cards per nightly run (created on first change). |
 | `saved_states/default.json` | Default Utility Cards filter/deck state, auto-loaded on page open. |
+| `saved_states/collection.json` | The shared household collection, the single source of truth for owned cards. It's written only by "Save Collection" and created on the first save. |
+| `saved_states/<name>.json` | Other saved states, written through the Worker (each save is a commit to `main`). |
 | `scripts/update_cards.py` | Nightly updater: cards, then rules, then `rules.html`. |
 | `.github/workflows/update-cards.yml` | Runs the updater daily at 06:00 UTC (and on manual dispatch), then commits. |
 | `scripts/apply-latest-patch.sh`, `patch-record.txt` | Local dev helper: applies `optcg-NNN-*.patch` files from `~/Downloads` and records them. |
@@ -73,8 +81,9 @@ Every page is a single hand-written HTML file with inline CSS and JS.
   - `counterValue` (computed by `counter_value()`): for Characters, the printed Counter. For
     Events, the first `+N power` boost inside the `[Counter]` effect (OP18-074 → 4000,
     OP02-045 → 6000). Conditional "additional" boosts and minus-power effects are ignored, and
-    `[Counter]` Events without a power boost get a blank value. Images are served via the proxy
-  `optcg-api.arjunbansal-ai.workers.dev/images/{id}`, not from the `imageUrl` column.
+    `[Counter]` Events without a power boost get a blank value.
+  - Images: the page builds image URLs from the card id (proxy first, official site as the
+    fallback). It does not use the `imageUrl` column.
 - The whole CSV is regenerated on every run, so manual edits to it are overwritten. Fix the
   generator instead.
 
@@ -93,7 +102,8 @@ Every page is a single hand-written HTML file with inline CSS and JS.
   so that each base card shows once; the base id is preferred over `_p`/`_r` ids. Variants are kept
   in `window.cardVariants` for the alt-art view.
 - **Filters** (they combine with AND across groups):
-  - Search (id, name, effect text).
+  - Search (id, name, effect and trigger text). It waits for a 200 ms pause in typing, because
+    every change re-renders about 3,000 cards.
   - Block: multi-select, OR.
   - Color: multi-select, OR (a card matches if any of its colors is selected).
   - Category: multi-select.
@@ -155,19 +165,24 @@ Every page is a single hand-written HTML file with inline CSS and JS.
 - **Alt-art viewer:** shows the `_p`/`_r` images for the cards in the deck.
 - **Save/Load State:** password-protected, through the Worker
   `optcg-state.46jwnf9v56.workers.dev`. Every call is a POST with
-  `{action: save|load|exists, password, name, state?}`; the page falls back to the old Worker's GET
-  API if it gets a 400. State holds: setAside, deck, table, blocks, colors, cats, tags,
+  `{action: save|load|exists, password, name, state?}` (see `worker/optcg-state.js`). State holds: setAside, deck, table, blocks, colors, cats, tags,
   cost/power/counter filters, hideIn, sortKey, search. Saved states are files at `saved_states/<name>.json` in the public repo. An `owned` key in older
   state files is ignored. The archetype selection
   is deliberately not restored.
 - **Default state:** on load, the page fetches `saved_states/default.json` from
   the same origin and applies it before the first render.
 - **Image modal:** click a thumbnail to enlarge it.
+- **Performance:** each official card image is a full-size PNG of about 290 KB. Thumbnails must stay
+  `loading="lazy"`, or a page load downloads every card image.
+- **Safety:** every value from the CSV or a saved state is HTML-escaped with `esc()`. Ids must
+  match `VALID_ID` (`[A-Za-z0-9_-]`), and saved-state and collection lists go through
+  `cleanList()`, because ids are placed inside `onclick="..."` attributes.
 - The page must stay usable on narrow screens: the grid collapses to one column below 1100px.
 
 ## 6. Playbook pages: content rules
 
-- Structure: an `<h1>` with the Leader name, color and card id, then a `.general` box ("Your
+- Structure: an `<h1>` with the Leader's color, name and card id (e.g. "Green Jewelry Bonney
+  Playbook (OP07-019)"), then a `.general` box ("Your
   plan"), then one `.matchup` block per opponent. Each block has an `<h2>` naming the opponent, a
   `.card-row` of the opponent's key cards (proxy images with labels), and these fields: Win
   condition, Effect KO, Key turn, Disrupt, Your plan, Priority targets, and Nasty tricks, plus
@@ -183,9 +198,12 @@ Every page is a single hand-written HTML file with inline CSS and JS.
 
 ## 7. Nightly pipeline: invariants
 
-1. Runs daily at 06:00 UTC on GitHub Actions (Python 3.12 + poppler).
-2. Rebuilds `data/cards.csv`, refreshes the rules, regenerates `rules.html`, and commits only if
-   something changed (`github-actions[bot]`).
+1. Runs daily at 06:00 UTC on GitHub Actions (Python 3.12 + poppler), with a 30-minute job
+   timeout.
+2. Rebuilds `data/cards.csv`, refreshes the rules, regenerates `rules.html`, syncs TCGplayer
+   prices, and commits only if something changed (`github-actions[bot]`). The push rebases first,
+   because the Worker also commits to `main`, and it retries 3 times; if every attempt fails, the
+   job fails.
 3. It must never commit a CSV that is empty or truncated. The script refuses to write a CSV
    when it fetches 0 cards or fewer than 95% of the current count (`MIN_KEEP_RATIO`). It writes
    the CSV atomically.
@@ -193,6 +211,7 @@ Every page is a single hand-written HTML file with inline CSS and JS.
    job as failed so that the problem gets noticed.
 5. Prices: `update_prices.py` exits early if tcgcsv's `last-updated.txt` hasn't changed. It
    refuses to write if more than 10% of groups fail or the product count drops by more than 10%.
+   For a group that fails, yesterday's products for that group are kept.
    tcgcsv blocks browser (CORS) requests and asks not to be called from user-facing apps, so the
    page only ever reads `data/tcgplayer.json`. Keep the pause between requests (about 180 per run).
 6. Rule changes are logged in `rule-changes-log.txt`. Card changes are logged in

@@ -252,7 +252,11 @@ def _dash(v):
 def parse_official_page(page):
     """Yield one normalized card dict per <dl class="modalCol"> on an official card list page."""
     for cid, block in re.findall(r'<dl class="modalCol" id="([^"]+)">(.*?)</dl>', page, re.S):
-        info = re.findall(r"<span>(.*?)</span>", re.search(r'<div class="infoCol">(.*?)</div>', block, re.S).group(1))
+        info_m = re.search(r'<div class="infoCol">(.*?)</div>', block, re.S)
+        if not info_m or not re.fullmatch(r"[A-Za-z0-9_-]{1,40}", cid):
+            print(f"  skipped malformed card block {cid!r}")
+            continue
+        info = re.findall(r"<span>(.*?)</span>", info_m.group(1))
         rarity = _clean(info[1]) if len(info) > 1 else ""
         category = _clean(info[2]).upper() if len(info) > 2 else ""
         name_m = re.search(r'<div class="cardName">(.*?)</div>', block, re.S)

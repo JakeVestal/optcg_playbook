@@ -12,6 +12,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
     steps:
@@ -41,10 +42,12 @@ jobs:
             echo "No changes"
           else
             git commit -m "chore: nightly update of cards, rules and TCGplayer prices"
+            pushed=0
             for i in 1 2 3; do
-              git pull --rebase && git push && break
+              if git pull --rebase && git push; then pushed=1; break; fi
               sleep 5
             done
+            if [ "$pushed" != 1 ]; then echo "push failed after 3 attempts"; exit 1; fi
           fi
       - name: Fail if an update step failed
         if: steps.update.outcome == 'failure' || steps.prices.outcome == 'failure'
