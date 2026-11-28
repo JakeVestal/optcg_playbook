@@ -44,7 +44,7 @@ Every page is a single hand-written HTML file with inline CSS and JS.
 
 - **Requirement:** it must always be **up to date, accurate and complete** as of the last nightly
   run. Every card printed in English must be present, including parallels and reprints.
-- Columns: `id,name,category,colors,cost,power,counter,effect,tags,blockIcon,imageUrl,types,life,trigger,attribute,rarity,source`.
+- Columns: `id,name,category,colors,cost,power,counter,effect,tags,blockIcon,imageUrl,types,life,trigger,attribute,rarity,source,counterValue`.
   `index.html` reads columns by position, so **only ever append new columns**.
   - `id`: card number, e.g. `OP18-021`. Variants use the suffixes `_p1`, `_p2`, … (parallel/alt
     art) and `_r1`, … (reprint).
@@ -66,7 +66,14 @@ Every page is a single hand-written HTML file with inline CSS and JS.
   - Alt-art numbering (`_pN`) differs between the two sources, so variant ids are never merged
     across them.
   - `trigger` holds `[Trigger]` text separately from `effect`. Tags are computed from both.
-  - Leaders have `life` set and `cost` empty. Images are served via the proxy
+  - Leaders have `life` set and `cost` empty.
+  - The official site prints `-` for a value of 0. The scraper stores `0` for the cost of any
+    non-Leader card and the power of any Character (e.g. OP02-068 Gum-Gum Rain costs 0). A blank
+    cost or power therefore means "not applicable", never 0.
+  - `counterValue` (computed by `counter_value()`): for Characters, the printed Counter. For
+    Events, the first `+N power` boost inside the `[Counter]` effect (OP18-074 → 4000,
+    OP02-045 → 6000). Conditional "additional" boosts and minus-power effects are ignored, and
+    `[Counter]` Events without a power boost get a blank value. Images are served via the proxy
   `optcg-api.arjunbansal-ai.workers.dev/images/{id}`, not from the `imageUrl` column.
 - The whole CSV is regenerated on every run, so manual edits to it are overwritten. Fix the
   generator instead.
@@ -92,6 +99,14 @@ Every page is a single hand-written HTML file with inline CSS and JS.
   - Category: multi-select.
   - Tags: multi-select, **AND** (the card must have every selected tag).
   - Archetypes panel (card `types`): OR.
+- **Cost / Power / Counter dropdowns** (▾ next to each sort button): multi-select checkboxes,
+  OR within one property and AND with every other filter. Counts work like the Archetypes panel.
+  The options run from 0 to the **max value in the CSV** (cost in steps of 1, power and counter in
+  steps of 1,000), so a stronger new card shows up after the nightly run with no code change.
+  The Counter filter and sort use `counterValue`; "None" means no counter value.
+- **Hide cards in Deck / Table / Collection:** toggle buttons that hide cards already in those lists.
+- **Card indicators:** each card shows chips such as "Deck ×2", "Table ×1" or "Own ×3", counted
+  per card number. They update in place when the lists change.
 - **Archetypes panel:** lists every type in the dataset, including those with a count of 0. Counts
   reflect all the other active filters but ignore the archetype filter itself. Selected types
   float to the top, then the list sorts by count descending, then alphabetically.
@@ -131,7 +146,7 @@ Every page is a single hand-written HTML file with inline CSS and JS.
   `optcg-state.46jwnf9v56.workers.dev`. Every call is a POST with
   `{action: save|load|exists, password, name, state?}`; the page falls back to the old Worker's GET
   API if it gets a 400. State holds: setAside, deck, table, owned, blocks, colors, cats, tags,
-  sortKey, search. Saved states are files at `saved_states/<name>.json` in the public repo. The archetype selection
+  cost/power/counter filters, hideIn, sortKey, search. Saved states are files at `saved_states/<name>.json` in the public repo. The archetype selection
   is deliberately not restored.
 - **Default state:** on load, the page fetches `saved_states/default.json` from
   the same origin and applies it before the first render.

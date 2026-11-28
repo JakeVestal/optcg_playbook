@@ -53,6 +53,30 @@ def extract_tags(effect, counter, category):
     return ",".join(sorted(t))
 
 
+# The [Counter] part of an Event's effect, up to the next timing keyword.
+COUNTER_SEGMENT = re.compile(r"\[Counter\](.*?)(?=\[(?:Main|Trigger|Activate: Main|On Play|End of Your Turn)\]|$)")
+
+
+def counter_value(effect, counter, category):
+    """Counter value used by the site's Counter filter and sort.
+
+    Characters: the printed Counter (1000 / 2000).
+    Events: the first "+N power" boost in the [Counter] effect, e.g. OP18-074 -> 4000,
+    OP02-045 -> 6000. Conditional "additional" boosts and minus-power effects aimed at the
+    opponent are ignored; [Counter] Events that don't boost power (K.O., search...) get "".
+    """
+    cat = (category or "").upper()
+    if cat == "CHARACTER":
+        return str(counter or "")
+    if cat == "EVENT":
+        seg = COUNTER_SEGMENT.search(effect or "")
+        if seg:
+            boost = re.search(r"\+(\d+) power", seg.group(1))
+            if boost:
+                return boost.group(1)
+    return ""
+
+
 RULES_PAGE = "https://en.onepiece-cardgame.com/rules/"
 RULES_DIR = Path("data/rules")
 RULES_TXT = RULES_DIR / "comprehensive_rules.txt"
@@ -239,6 +263,14 @@ def parse_official_page(page):
                 life = _dash(_clean(cost_m.group(2)))
             else:
                 cost = _dash(_clean(cost_m.group(2)))
+        power = _dash(_field(block, "power"))
+        # The official list prints "-" for a value of 0 (e.g. OP02-068 Gum-Gum Rain costs 0,
+        # EB01-013 Kouzuki Hiyori has 0 power). Every non-Leader card has a cost and every
+        # Character has a power, so "-" there means 0. (Leaders: "Life" replaces cost.)
+        if not cost and not life and category in ("CHARACTER", "EVENT", "STAGE"):
+            cost = "0"
+        if not power and category == "CHARACTER":
+            power = "0"
         attrs = re.findall(r'<div class="attrIcon">.*?<i>(.*?)</i>', block, re.S)
         effect = _field(block, "text")
         trigger = _field(block, "trigger")
@@ -248,7 +280,7 @@ def parse_official_page(page):
             "category": category,
             "colors": "|".join(c.strip() for c in _field(block, "color").split("/") if c.strip()),
             "cost": cost,
-            "power": _dash(_field(block, "power")),
+            "power": power,
             "counter": _dash(_field(block, "counter")),
             "effect": "" if effect == "-" else effect,
             "blockIcon": _dash(_field(block, "block")),
@@ -290,6 +322,13 @@ def fetch_official():
     return cards
 
 
+def _num_str(v):
+    """Keep 0 as "0" (a plain `or ""` would turn 0 into an empty string)."""
+    if v is None or v == "" or v == "-":
+        return ""
+    return str(int(v)) if isinstance(v, float) and v.is_integer() else str(v)
+
+
 def fetch_optcgjson():
     """Fallback source: community dataset hugoprudente/optcgjson. Returns {id: card}."""
     raw = []
@@ -320,9 +359,9 @@ def fetch_optcgjson():
             "name": c.get("name") or "",
             "category": (c.get("cardClass") or "").upper(),
             "colors": "|".join(c.get("color") or []),
-            "cost": str(c.get("cost") or ""),
-            "power": str(c.get("power") or ""),
-            "counter": str(c.get("counter") or ""),
+            "cost": _num_str(c.get("cost")),
+            "power": _num_str(c.get("power")),
+            "counter": _num_str(c.get("counter")),
             "effect": (c.get("effect") or "").replace("\n", " ").replace("\r", " "),
             "blockIcon": str(c.get("blockIcon") or ""),
             "imageUrl": c.get("imageUrl") or "",
@@ -378,6 +417,7 @@ def main():
         w.writerow(CSV_FIELDS)
         for cid, c in sorted(by_id.items()):
             c["tags"] = extract_tags(c["effect"] + " " + c["trigger"], c["counter"], c["category"])
+            c["counterValue"] = counter_value(c["effect"], c["counter"], c["category"])
             w.writerow([c.get(k, "") for k in CSV_FIELDS])
     with open(tmp, newline="", encoding="utf-8") as f:
         new_rows = {r["id"]: r for r in csv.DictReader(f)}
@@ -394,7 +434,7 @@ CARDS_CSV = Path("data/cards.csv")
 CARD_LOG = Path("data/card-changes-log.txt")
 # Columns 1-12 are the original layout (index.html reads them by position); new columns are appended.
 CSV_FIELDS = ["id","name","category","colors","cost","power","counter","effect","tags","blockIcon","imageUrl","types",
-              "life","trigger","attribute","rarity","source"]
+              "life","trigger","attribute","rarity","source","counterValue"]
 MIN_KEEP_RATIO = 0.95
 
 

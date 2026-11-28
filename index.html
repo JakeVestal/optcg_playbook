@@ -110,6 +110,34 @@ button.secondary { background: #2a3650; }
 }
 .types-pinned:empty { display: none; }
 
+/* "in deck / table / collection" indicators on each card */
+.inlist { margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap; }
+.inlist:empty { display: none; }
+.inchip { font-size: 0.68em; font-weight: 700; padding: 1px 7px; border-radius: 10px; border: 1px solid; }
+.inchip.deck { color: var(--gold); border-color: var(--gold); }
+.inchip.table { color: #7eb8ff; border-color: #7eb8ff; }
+.inchip.owned { color: #3fb950; border-color: #3fb950; }
+
+/* Cost / Power / Counter filter dropdowns next to the sort buttons */
+.dd { position: relative; display: inline-flex; }
+.dd > button:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.dd > .dd-toggle { border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none; padding: 6px 8px; min-width: 28px; }
+.dd-panel {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
+  min-width: 170px; max-width: calc(100vw - 32px); max-height: 50vh; overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.dd-panel.open { display: block; }
+@media (max-width: 600px) {
+  /* on phones, show the dropdown as a fixed sheet so it can't run off the screen edge */
+  .dd-panel { position: fixed; top: 15vh; left: 16px; right: 16px; max-width: none; max-height: 70vh; }
+}
+.dd-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.8em; color: var(--gold); }
+.dd-head button { padding: 2px 8px; font-size: 0.9em; }
+.dd-panel .type-row { align-items: center; }
+.dd-panel .type-row input { margin: 0 6px 0 0; accent-color: #3fb950; }
+
 .warnings { margin: 6px 0; font-size: 0.78em; color: var(--gold); }
 .warnings div::before { content: "⚠ "; }
 .warnings.ok { color: #3fb950; }
@@ -198,10 +226,17 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
 
 <div class="toolbar">
   <span style="color:var(--muted);font-size:0.85em;">Sort:</span>
-  <button onclick="setSort('cost')">Cost</button>
-  <button onclick="setSort('power')">Power</button>
-  <button onclick="setSort('counter')">Counter</button>
+  <span class="dd" id="dd-cost"><button onclick="setSort('cost')">Cost</button><button class="dd-toggle" onclick="toggleDropdown(event,'cost')" title="Filter by cost">▾</button><div class="dd-panel" onclick="event.stopPropagation()"></div></span>
+  <span class="dd" id="dd-power"><button onclick="setSort('power')">Power</button><button class="dd-toggle" onclick="toggleDropdown(event,'power')" title="Filter by power">▾</button><div class="dd-panel" onclick="event.stopPropagation()"></div></span>
+  <span class="dd" id="dd-counter"><button onclick="setSort('counter')">Counter</button><button class="dd-toggle" onclick="toggleDropdown(event,'counter')" title="Filter by counter">▾</button><div class="dd-panel" onclick="event.stopPropagation()"></div></span>
   <button class="secondary" onclick="setSort('')">Default</button>
+</div>
+
+<div class="toolbar" id="hide-filter">
+  <span style="color:var(--muted);font-size:0.85em;">Hide cards in:</span>
+  <button onclick="toggleHide(this,'deck')" data-value="deck">Deck</button>
+  <button onclick="toggleHide(this,'table')" data-value="table">Table</button>
+  <button onclick="toggleHide(this,'owned')" data-value="owned">Collection</button>
 </div>
 
 <div class="sidebar">
@@ -308,6 +343,8 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
 <script>
 let allCards = [];
 let table = [];   // [{id, qty}] cards being considered for the deck
+let hideIn = new Set();   // 'deck' | 'table' | 'owned': hide cards already in those lists
+let mainIdByBase = {};    // base card number -> id of the card shown in the main list
 let owned = [];   // [{id, qty}] cards the user owns
 let setAside = new Set();
 let deck = [];
@@ -336,6 +373,7 @@ async function load() {
   });
   allCards = Object.values(byBase);
   window.cardVariants = variants;
+  mainIdByBase = Object.fromEntries(allCards.map(c => [baseId(c.id), c.id]));
   // apply the saved 'default' state (if any) BEFORE the first render, so it never
   // overwrites filters the user has already started clicking
   const applied = await loadDefaultState();
@@ -381,13 +419,39 @@ function rowToCard(result) {
     tags: result[8] || '', blockIcon: result[9] || '', imageUrl: result[10],
     types: result[11] || '',
     life: result[12] || '', trigger: result[13] || '', attribute: result[14] || '',
-    rarity: result[15] || '', source: result[16] || ''
+    rarity: result[15] || '', source: result[16] || '',
+    counterValue: result[17] || ''   // Character counter, or an Event's [Counter] +power boost
   };
 }
 
+// ---------- Cost / Power / Counter range filters (multi-select, OR within one property).
+// Options run from 0 to the max value found in data/cards.csv, so new cards are picked up
+// automatically after the nightly run.
+const intKey = v => { const n = parseInt(v, 10); return isNaN(n) ? null : String(n); };
+const RANGE = {
+  cost:    { title: 'Cost',    step: 1,    value: c => intKey(c.cost),                 label: v => v },
+  power:   { title: 'Power',   step: 1000, value: c => intKey(c.power),                label: v => Number(v).toLocaleString() },
+  counter: { title: 'Counter', step: 1000, value: c => intKey(c.counterValue) ?? '0',  label: v => v === '0' ? 'None' : '+' + Number(v).toLocaleString() },
+};
+const rangeSel = { cost: new Set(), power: new Set(), counter: new Set() };
+
+function rangeOptions(key) {
+  const vals = new Set();
+  let max = 0;
+  allCards.forEach(c => { const v = RANGE[key].value(c); if (v != null) { vals.add(v); max = Math.max(max, Number(v)); } });
+  for (let v = 0; v <= max; v += RANGE[key].step) vals.add(String(v));   // full grid, plus any off-grid value
+  return [...vals].sort((a, b) => Number(a) - Number(b));
+}
+
+// How many copies of each card number are in the deck / table / collection.
+function tally(list) { const m = {}; list.forEach(d => { const b = baseId(d.id); m[b] = (m[b] || 0) + d.qty; }); return m; }
+function listCounts() { return { deck: tally(deck), table: tally(table), owned: tally(owned) }; }
+
 // Tag checks come straight from the CSV `tags` column (computed by scripts/update_cards.py)
 // so the page and the data never disagree.
-function passesFilters(c, { ignoreTypes = false } = {}) {
+// `ignore` names one filter to skip ('types', 'cost', 'power' or 'counter'), used for the
+// counts shown next to that filter's own options.
+function passesFilters(c, ignore = null, counts = listCounts()) {
   const search = document.getElementById('search').value.toLowerCase();
   if (setAside.has(c.id)) return false;
   if (activeBlocks.size && !activeBlocks.has(c.blockIcon)) return false;
@@ -396,23 +460,93 @@ function passesFilters(c, { ignoreTypes = false } = {}) {
   if (activeCats.size && !activeCats.has((c.category || '').toUpperCase())) return false;
   const tags = (c.tags || '').split(',').filter(Boolean);
   if (activeTags.size && ![...activeTags].every(t => tags.includes(t))) return false;
+  for (const key of ['cost', 'power', 'counter']) {
+    if (ignore !== key && rangeSel[key].size && !rangeSel[key].has(RANGE[key].value(c))) return false;
+  }
+  if (hideIn.size) {
+    const b = baseId(c.id);
+    for (const list of hideIn) if (counts[list][b]) return false;
+  }
   if (search && !(c.id + ' ' + c.name + ' ' + c.effect + ' ' + c.trigger).toLowerCase().includes(search)) return false;
-  if (!ignoreTypes && activeTypes.size) {
+  if (ignore !== 'types' && activeTypes.size) {
     const cardTypes = (c.types || '').split('|').map(t => t.trim()).filter(Boolean);
     if (!cardTypes.some(t => activeTypes.has(t))) return false;
   }
   return true;
 }
 
-function visibleCards() { return allCards.filter(c => passesFilters(c)); }
-function visibleCardsWithoutTypeFilter() { return allCards.filter(c => passesFilters(c, { ignoreTypes: true })); }
+function filtered(ignore = null) { const counts = listCounts(); return allCards.filter(c => passesFilters(c, ignore, counts)); }
+function visibleCards() { return filtered(); }
+function visibleCardsWithoutTypeFilter() { return filtered('types'); }
+
+function indicatorHTML(id, counts) {
+  const b = baseId(id);
+  const d = counts.deck[b] || 0, t = counts.table[b] || 0, o = counts.owned[b] || 0;
+  return (d ? `<span class="inchip deck" title="Copies in your deck">Deck ×${d}</span>` : '') +
+    (t ? `<span class="inchip table" title="On your table">Table ×${t}</span>` : '') +
+    (o ? `<span class="inchip owned" title="Copies in your collection">Own ×${o}</span>` : '');
+}
+
+// After a deck / table / collection change: refresh that card's indicator in place, or
+// re-filter the whole list when a "Hide cards in" toggle could make it appear or disappear.
+function afterListChange(id) {
+  if (hideIn.size) { render(); refreshTypesList(); return; }
+  const mainId = mainIdByBase[baseId(id)];
+  const el = mainId && document.querySelector(`#cards .card[data-id="${mainId}"] .inlist`);
+  if (el) el.innerHTML = indicatorHTML(mainId, listCounts());
+}
+
+function toggleHide(btn, list) {
+  btn.classList.toggle('active');
+  if (hideIn.has(list)) hideIn.delete(list); else hideIn.add(list);
+  render(); refreshTypesList();
+}
+
+// ---------- dropdown panels
+function toggleDropdown(e, key) {
+  e.stopPropagation();
+  const panel = document.querySelector(`#dd-${key} .dd-panel`);
+  const opening = !panel.classList.contains('open');
+  closeDropdowns();
+  if (opening) { panel.classList.add('open'); renderDropdown(key); }
+}
+function closeDropdowns() { document.querySelectorAll('.dd-panel.open').forEach(p => p.classList.remove('open')); }
+document.addEventListener('click', closeDropdowns);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDropdowns(); });
+
+function renderDropdown(key) {
+  const wrap = document.getElementById('dd-' + key);
+  if (!wrap) return;
+  const sel = rangeSel[key];
+  const toggle = wrap.querySelector('.dd-toggle');
+  toggle.textContent = sel.size ? `▾ ${sel.size}` : '▾';
+  toggle.classList.toggle('active', sel.size > 0);
+  const panel = wrap.querySelector('.dd-panel');
+  if (!panel.classList.contains('open')) return;
+  // counts reflect every other filter, like the Archetypes panel
+  const n = {};
+  const counts = listCounts();
+  allCards.forEach(c => { if (passesFilters(c, key, counts)) { const v = RANGE[key].value(c); if (v != null) n[v] = (n[v] || 0) + 1; } });
+  panel.innerHTML = `<div class="dd-head"><span>${RANGE[key].title}</span><button class="secondary" onclick="clearRange('${key}')">Clear</button></div>` +
+    rangeOptions(key).map(v => `<label class="type-row${sel.has(v) ? ' selected' : ''}">
+      <span><input type="checkbox" ${sel.has(v) ? 'checked' : ''} onchange="toggleRange('${key}','${v}')">${esc(RANGE[key].label(v))}</span>
+      <span class="type-count">${n[v] || 0}</span></label>`).join('');
+}
+function refreshDropdowns() { Object.keys(RANGE).forEach(renderDropdown); }
+function toggleRange(key, v) {
+  if (rangeSel[key].has(v)) rangeSel[key].delete(v); else rangeSel[key].add(v);
+  render(); refreshTypesList();
+}
+function clearRange(key) { rangeSel[key].clear(); render(); refreshTypesList(); }
 
 function render() {
   let cards = visibleCards();
+  const counts = listCounts();
   if (sortKey) {
+    const field = sortKey === 'counter' ? 'counterValue' : sortKey;   // Events sort by their [Counter] boost
     cards.sort((a, b) => {
-      const av = parseFloat(a[sortKey]);
-      const bv = parseFloat(b[sortKey]);
+      const av = parseFloat(a[field]);
+      const bv = parseFloat(b[field]);
       if (isNaN(av) && isNaN(bv)) return 0;
       if (isNaN(av)) return 1;   // cards without a value sort last
       if (isNaN(bv)) return -1;
@@ -444,7 +578,8 @@ function render() {
             <button onclick="addOwned('${c.id}')" title="Record one owned copy">+Own</button>
           </div>
         </div>
-        <div class="meta">${esc(c.category)} · ${esc(c.cost || '?')}c · ${esc(c.power || '?')} · ${esc(c.counter || '—')} · ${esc(c.colors)}</div>
+        <div class="meta">${esc(c.category)} · ${esc(c.cost || '—')}c · ${esc(c.power || '—')} · ${c.counterValue ? '+' + esc(c.counterValue) : '—'} · ${esc(c.colors)}</div>
+        <div class="inlist">${indicatorHTML(c.id, counts)}</div>
         <div class="badges">${tags.map(t => `<span class="badge">${esc(t)}</span>`).join('')}</div>
         <div class="card-text">${esc(c.effect)}${c.trigger ? `<div style="margin-top:4px;color:var(--gold);">${esc(c.trigger)}</div>` : ''}</div>
       </div>`;
@@ -491,13 +626,13 @@ function bump(list, id, delta) {
 }
 
 // Tournament rules are WARNINGS only; nothing is ever blocked.
-function addToDeck(id) { deck = bump(deck, id, 1); renderDeck(); }
-function removeFromDeck(id) { deck = bump(deck, id, -1); renderDeck(); }
-function addToTable(id) { if (!qtyOf(table, id)) table = bump(table, id, 1); renderTable(); }
-function removeFromTable(id) { table = table.filter(d => d.id !== id); renderTable(); }
+function addToDeck(id) { deck = bump(deck, id, 1); renderDeck(); afterListChange(id); }
+function removeFromDeck(id) { deck = bump(deck, id, -1); renderDeck(); afterListChange(id); }
+function addToTable(id) { if (!qtyOf(table, id)) table = bump(table, id, 1); renderTable(); afterListChange(id); }
+function removeFromTable(id) { table = table.filter(d => d.id !== id); renderTable(); afterListChange(id); }
 function tableToDeck(id) { addToDeck(id); }
-function addOwned(id) { owned = bump(owned, id, 1); renderOwned(); }
-function removeOwned(id) { owned = bump(owned, id, -1); renderOwned(); }
+function addOwned(id) { owned = bump(owned, id, 1); renderOwned(); afterListChange(id); }
+function removeOwned(id) { owned = bump(owned, id, -1); renderOwned(); afterListChange(id); }
 
 function deckWarnings() {
   const w = [];
@@ -820,6 +955,7 @@ function refreshTypesList() {
   const rest = sorted.filter(([t]) => !activeTypes.has(t)).map(row).join('');
   document.getElementById('types-list').innerHTML =
     (pinned ? `<div class="types-pinned">${pinned}</div>` : '') + (rest || (pinned ? '' : '<div style="color:var(--muted);">None</div>'));
+  refreshDropdowns();
 }
 
 function toggleType(t) {
@@ -864,6 +1000,10 @@ function collectState() {
     activeColors: [...activeColors],
     activeCats: [...activeCats],
     activeTags: [...activeTags],
+    costFilter: [...rangeSel.cost],
+    powerFilter: [...rangeSel.power],
+    counterFilter: [...rangeSel.counter],
+    hideIn: [...hideIn],
     sortKey,
     search: document.getElementById('search')?.value || ''
   };
@@ -879,6 +1019,10 @@ function applyState(s) {
   activeColors = new Set(s.activeColors || []);
   activeCats = new Set(s.activeCats || []);
   activeTags = new Set(s.activeTags || []);
+  rangeSel.cost = new Set(s.costFilter || []);
+  rangeSel.power = new Set(s.powerFilter || []);
+  rangeSel.counter = new Set(s.counterFilter || []);
+  hideIn = new Set(s.hideIn || []);
   // intentionally do not restore activeTypes — types list is rebuilt from other filters
   activeTypes = new Set();
   sortKey = s.sortKey || '';
@@ -893,6 +1037,7 @@ function applyState(s) {
   document.querySelectorAll('#color-filter button:not(.secondary)').forEach(b => b.classList.toggle('active', isActive(b, activeColors)));
   document.querySelectorAll('#cat-filter button:not(.secondary)').forEach(b => b.classList.toggle('active', isActive(b, activeCats)));
   document.querySelectorAll('#tag-filter button:not(.secondary)').forEach(b => b.classList.toggle('active', isActive(b, activeTags)));
+  document.querySelectorAll('#hide-filter button').forEach(b => b.classList.toggle('active', isActive(b, hideIn)));
 
   render();
   refreshTypesList();
