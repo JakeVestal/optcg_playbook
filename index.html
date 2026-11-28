@@ -261,7 +261,12 @@ textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); colo
       <div id="table-list"></div>
     </div>
     <div class="panel" style="margin-top:12px;" id="owned-panel">
-      <h3>Collection <span id="owned-count" style="color:var(--gold);">0</span> <span style="font-size:0.75em;color:var(--muted);">(cards you own)</span></h3>
+      <h3>Collection <span id="owned-count" style="color:var(--gold);">0</span> <span style="font-size:0.75em;color:var(--muted);">(shared, cards we own)</span></h3>
+      <div id="owned-status" class="warnings"></div>
+      <div style="margin-bottom:6px; display:flex; gap:6px; flex-wrap:wrap;">
+        <button class="secondary" onclick="saveCollection()">Save Collection</button>
+        <button class="secondary" onclick="reloadCollection()">Reload</button>
+      </div>
       <div id="owned-list"></div>
       <div style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap;">
         <button class="secondary" onclick="openShoppingList(false)">Shopping list: Deck</button>
@@ -376,6 +381,7 @@ async function load() {
   mainIdByBase = Object.fromEntries(allCards.map(c => [baseId(c.id), c.id]));
   // apply the saved 'default' state (if any) BEFORE the first render, so it never
   // overwrites filters the user has already started clicking
+  await loadCollection();
   const applied = await loadDefaultState();
   if (!applied) { render(); refreshTypesList(); }
 }
@@ -696,6 +702,12 @@ function renderOwned() {
     return listRow(`${d.qty}x ${esc(d.id)} ${c ? esc(c.name) : ''}`,
       `<button onclick="addOwned('${esc(d.id)}')">+</button><button onclick="removeOwned('${esc(d.id)}')">−</button>`);
   }).join('') || '<div style="color:var(--muted);font-size:0.8em;">Empty: use +Own on a card</div>';
+  const st = document.getElementById('owned-status');
+  const dirty = collectionDirty();
+  st.className = 'warnings' + (dirty ? '' : ' ok');
+  st.innerHTML = dirty
+    ? '<div>Unsaved changes: click Save Collection</div>'
+    : `<div>Saved${collectionMeta.updatedAt ? ' · ' + esc(new Date(collectionMeta.updatedAt).toLocaleString()) : ''}</div>`;
 }
 
 // Shopping list = wanted − owned, counted per card number (alt arts count as the same card).
@@ -990,12 +1002,96 @@ load();
 
 const WORKER = "https://optcg-state.46jwnf9v56.workers.dev";
 
+// ---------- Shared collection: ONE file, saved_states/collection.json, shared by the household.
+// It loads at page load, and only "Save Collection" writes it (Save/Load State never touch it).
+// Saving re-reads the latest copy through the Worker and does a three-way merge, so two people
+// editing at the same time don't overwrite each other: each card gets
+// mine + theirs − what this page originally loaded.
+const COLLECTION_NAME = 'collection';
+let collectionBase = [];       // the collection as last loaded or saved by this page
+let collectionMeta = {};       // { updatedAt }
+
+const isReservedName = n => n.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase() === COLLECTION_NAME;
+const tallyExact = list => { const m = {}; (list || []).forEach(d => { if (d && d.id && d.qty > 0) m[d.id] = (m[d.id] || 0) + d.qty; }); return m; };
+const fromTally = m => Object.entries(m).filter(([, q]) => q > 0).map(([id, qty]) => ({ id, qty })).sort((a, b) => a.id.localeCompare(b.id));
+const normalizeOwned = list => fromTally(tallyExact(list));
+
+function collectionDirty() {
+  return JSON.stringify(normalizeOwned(owned)) !== JSON.stringify(normalizeOwned(collectionBase));
+}
+
+function mergeCollections(base, mine, theirs) {
+  const B = tallyExact(base), M = tallyExact(mine), T = tallyExact(theirs);
+  const out = {};
+  let pulled = 0;
+  new Set([...Object.keys(B), ...Object.keys(M), ...Object.keys(T)]).forEach(id => {
+    const b = B[id] || 0, m = M[id] || 0, t = T[id] || 0;
+    if (t !== b) pulled++;
+    out[id] = Math.max(0, m + t - b);
+  });
+  return { merged: fromTally(out), pulled };
+}
+
+// Reads the copy published on the site. A save can take about a minute to show up here;
+// that is safe because saving always merges with the latest copy first.
+async function loadCollection() {
+  try {
+    const res = await fetch('saved_states/' + COLLECTION_NAME + '.json', { cache: 'no-cache' });
+    const data = res.ok ? await res.json() : {};
+    owned = normalizeOwned(data.owned);
+    collectionMeta = { updatedAt: data.updatedAt || '' };
+  } catch (e) {
+    console.warn('collection load failed', e);
+    owned = [];
+    collectionMeta = {};
+  }
+  collectionBase = owned.map(d => ({ ...d }));
+}
+
+async function reloadCollection() {
+  if (collectionDirty() && !confirm('Discard your unsaved collection changes and reload the shared collection?')) return;
+  await loadCollection();
+  render();
+  refreshTypesList();
+}
+
+async function saveCollection() {
+  const password = prompt("Password:");
+  if (!password) return;
+  try {
+    // Latest copy straight from GitHub through the Worker (the site's copy can lag a minute).
+    let { res, data } = await workerCall({ action: "load", password, name: COLLECTION_NAME });
+    if (res.status === 401) { alert("Save failed: bad password"); return; }
+    if (!res.ok && res.status !== 404) { alert("Save failed: " + (data.error || res.status)); return; }
+    const theirs = res.ok ? normalizeOwned(data.state && data.state.owned) : [];
+    const { merged, pulled } = mergeCollections(collectionBase, owned, theirs);
+    const state = { owned: merged, updatedAt: new Date().toISOString() };
+    ({ res, data } = await workerCall({ action: "save", password, name: COLLECTION_NAME, state }));
+    if (!res.ok) { alert("Save failed: " + (data.error || res.status)); return; }
+    owned = merged;
+    collectionBase = merged.map(d => ({ ...d }));
+    collectionMeta = { updatedAt: state.updatedAt };
+    render();
+    refreshTypesList();
+    alert(pulled
+      ? `Collection saved. It also includes ${pulled} card change${pulled > 1 ? 's' : ''} someone else saved since this page loaded.`
+      : "Collection saved.");
+  } catch (e) {
+    alert("Save error: " + e.message);
+  }
+}
+
+// Warn before leaving the page with unsaved collection changes.
+window.addEventListener('beforeunload', e => {
+  if (collectionDirty()) { e.preventDefault(); e.returnValue = ''; }
+});
+
 function collectState() {
   return {
     setAside: [...setAside],
     deck,
     table,
-    owned,
+    // the collection is NOT part of a saved state: it has its own single shared file
     activeBlocks: [...activeBlocks],
     activeColors: [...activeColors],
     activeCats: [...activeCats],
@@ -1014,7 +1110,7 @@ function applyState(s) {
   setAside = new Set(s.setAside || []);
   deck = s.deck || [];
   table = s.table || [];
-  owned = s.owned || [];
+  // s.owned (from states saved before the collection was split off) is ignored on purpose
   activeBlocks = new Set(s.activeBlocks || []);
   activeColors = new Set(s.activeColors || []);
   activeCats = new Set(s.activeCats || []);
@@ -1061,6 +1157,7 @@ async function saveState() {
   if (!password) return;
   const name = prompt("State name (letters, numbers, _ -):", "default");
   if (!name) return;
+  if (isReservedName(name)) { alert('"' + COLLECTION_NAME + '" is reserved for the shared collection. Please pick another name.'); return; }
 
   try {
     let { res, data } = await workerCall({ action: "exists", password, name });
@@ -1088,6 +1185,7 @@ async function loadState() {
   if (!password) return;
   const name = prompt("State name to load:", "default");
   if (!name) return;
+  if (isReservedName(name)) { alert('"' + COLLECTION_NAME + '" is the shared collection, not a saved state. It loads automatically.'); return; }
   try {
     let { res, data } = await workerCall({ action: "load", password, name });
     if (res.status === 400) {               // old Worker: no "load" action

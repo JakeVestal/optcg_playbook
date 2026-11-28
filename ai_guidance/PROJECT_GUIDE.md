@@ -125,7 +125,18 @@ Every page is a single hand-written HTML file with inline CSS and JS.
   - no more than 4 copies per card number, counting alt arts together;
   - every card shares at least one color with the Leader.
 - **Table panel:** cards you're considering. Each entry has buttons for +Deck and remove.
-- **Collection panel:** owned quantities, with +/− buttons.
+- **Collection panel:** the **one shared household collection**, with +/− buttons per card.
+  - **Storage:** it lives in a single file, `saved_states/collection.json`
+    (`{owned: [{id, qty}], updatedAt}`). It's the only source of truth: it is **not** part of any
+    saved state, and Save/Load State never read or write it. The state name `collection` is
+    reserved.
+  - **Loading:** it loads at page load from the site copy, before the default state is applied.
+    "Reload" fetches it again.
+  - **Saving:** "Save Collection" (password) first reads the latest copy straight from GitHub
+    through the Worker, then saves a three-way merge: per card, mine + theirs − the copy this
+    page loaded. Two people editing at once therefore never overwrite each other's changes.
+  - **Unsaved changes:** the panel shows "Unsaved changes", and leaving the page asks for
+    confirmation.
 - **Shopping list** (two buttons: "Deck", or "Deck + Table"):
   - **What it lists:** the wanted cards minus the owned ones, counted per card number. A Table
     card counts as 4 wanted, or 1 for a Leader. `P-` promo cards are left out of Mass Entry.
@@ -145,8 +156,9 @@ Every page is a single hand-written HTML file with inline CSS and JS.
 - **Save/Load State:** password-protected, through the Worker
   `optcg-state.46jwnf9v56.workers.dev`. Every call is a POST with
   `{action: save|load|exists, password, name, state?}`; the page falls back to the old Worker's GET
-  API if it gets a 400. State holds: setAside, deck, table, owned, blocks, colors, cats, tags,
-  cost/power/counter filters, hideIn, sortKey, search. Saved states are files at `saved_states/<name>.json` in the public repo. The archetype selection
+  API if it gets a 400. State holds: setAside, deck, table, blocks, colors, cats, tags,
+  cost/power/counter filters, hideIn, sortKey, search. Saved states are files at `saved_states/<name>.json` in the public repo. An `owned` key in older
+  state files is ignored. The archetype selection
   is deliberately not restored.
 - **Default state:** on load, the page fetches `saved_states/default.json` from
   the same origin and applies it before the first render.
