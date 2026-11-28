@@ -118,7 +118,19 @@ button.secondary { background: #2a3650; }
 .list-row .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list-row button { padding: 1px 6px; font-size: 0.85em; border-radius: 8px; }
 .leader-row { color: var(--gold); font-weight: 600; }
-textarea.shop { width: 100%; min-height: 220px; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-family: ui-monospace, monospace; font-size: 0.85em; }
+.shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 12px; }
+.pick-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.shop-tile { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 6px; font-size: 0.78em; position: relative; }
+.shop-tile.chosen { border-color: #3fb950; }
+.shop-tile img { width: 100%; aspect-ratio: 5 / 7; object-fit: cover; border-radius: 4px; cursor: pointer; display: block; background: #0b1220; }
+.shop-tile .qty { position: absolute; top: 10px; left: 10px; background: var(--gold); color: #000; font-weight: 700; border-radius: 10px; padding: 1px 7px; }
+.shop-tile .nm { font-weight: 600; margin-top: 4px; }
+.shop-total { margin-top: 12px; font-weight: 700; color: var(--gold); }
+.counter { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 6px; }
+.counter span { min-width: 2ch; text-align: center; font-weight: 700; font-size: 1.15em; }
+.counter button:disabled { opacity: 0.35; cursor: default; }
+#modal { z-index: 1200; }
+textarea.shop { width: 100%; min-height: 160px; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-family: ui-monospace, monospace; font-size: 0.85em; }
 .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
 .modal.open { display: flex; }
 .modal img { max-width: 90%; max-height: 90%; border-radius: 8px; }
@@ -252,18 +264,41 @@ textarea.shop { width: 100%; min-height: 220px; background: var(--panel-2); colo
 </div>
 
 <div class="modal" id="shop-modal" onclick="closeShop()" style="overflow-y:auto; align-items:flex-start; padding-top:40px;">
-  <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; max-width:700px; width:90%;" onclick="event.stopPropagation()">
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; max-width:960px; width:92%;" onclick="event.stopPropagation()">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
       <h3 style="margin:0; color:var(--gold);" id="shop-title">Shopping list</h3>
       <button onclick="closeShop()">Close</button>
     </div>
     <p class="meta" id="shop-summary"></p>
-    <p class="meta">TCGplayer Mass Entry format: <code>4 Franky [OP18] 034</code>. "Send to TCGplayer" opens Mass Entry already filled in; if it shows up empty, use Copy, then Open Mass Entry, and paste.</p>
+    <p class="meta" id="shop-mode"></p>
     <textarea class="shop" id="shop-text" readonly></textarea>
     <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+      <button onclick="openAltPicker()">Select alt arts</button>
       <a id="shop-send" href="#" target="_blank" rel="noopener"><button>Send to TCGplayer</button></a>
       <button onclick="copyShop()">Copy</button>
       <a href="https://www.tcgplayer.com/massentry?productline=One%20Piece%20Card%20Game" target="_blank" rel="noopener"><button>Open Mass Entry</button></a>
+    </div>
+    <p class="meta">"Send to TCGplayer" opens Mass Entry already filled in. If it shows up empty, use Copy, then Open Mass Entry, and paste.</p>
+    <div class="shop-total" id="shop-total"></div>
+    <div class="shop-grid" id="shop-grid"></div>
+    <p class="meta" id="shop-prices" style="margin-top:10px;"></p>
+  </div>
+</div>
+
+<div class="modal" id="pick-modal" style="overflow-y:auto; align-items:flex-start; padding-top:40px; z-index:1100;">
+  <div style="background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px; max-width:960px; width:92%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+      <div>
+        <div class="meta" id="pick-step"></div>
+        <h3 style="margin:2px 0; color:var(--gold);" id="pick-title"></h3>
+      </div>
+      <button onclick="closePicker()" title="Close without changing the list">Close</button>
+    </div>
+    <p id="pick-status" style="margin:6px 0 0;"></p>
+    <div class="shop-grid pick-grid" id="pick-grid"></div>
+    <div style="display:flex; justify-content:space-between; margin-top:12px;">
+      <button id="pick-back" onclick="pickBack()">← Back</button>
+      <button id="pick-next" onclick="pickNext()" class="active">Next →</button>
     </div>
   </div>
 </div>
@@ -544,26 +579,206 @@ function shoppingNeeds(includeTable) {
     .sort((a, b) => a.id.localeCompare(b.id));
 }
 
-function openShoppingList(includeTable) {
-  const needs = shoppingNeeds(includeTable);
+// ---------- TCGplayer data: data/tcgplayer.json, built nightly by scripts/update_prices.py from tcgcsv.com
+// (tcgcsv blocks browser requests, so the page never calls it directly).
+let tcgData = null;   // { updated, cards: { "OP18-031": [[productId, name, setAbbr, marketPrice|null], ...] } }
+async function loadTcgData() {
+  if (tcgData) return tcgData;
+  try {
+    const res = await fetch('data/tcgplayer.json', { cache: 'no-cache' });
+    if (res.ok) tcgData = await res.json();
+  } catch (e) { console.warn('TCGplayer data load failed', e); }
+  return tcgData;
+}
+const tcgImg = (pid, big) => `https://tcgplayer-cdn.tcgplayer.com/product/${pid}_${big ? 'in_1000x1000' : '200w'}.jpg`;
+const money = v => (v == null ? '—' : '$' + v.toFixed(2));
+const VARIANT_WORDS = /alternate art|manga|parallel|\bsp\b|gold|treasure|full art|serial|pre-?release|jolly roger|textured|foil/i;
+
+function tcgVersions(num) {
+  return ((tcgData && tcgData.cards[num]) || []).map(([pid, name, abbr, price]) => ({ pid, name, abbr, price }));
+}
+// The standard printing: a version not flagged as special art, cheapest first.
+function defaultVersion(versions) {
+  const byPrice = (a, b) => (a.price ?? Infinity) - (b.price ?? Infinity);
+  return versions.filter(v => !VARIANT_WORDS.test(v.name)).sort(byPrice)[0] || [...versions].sort(byPrice)[0] || null;
+}
+// Standard version first, then alt arts by price.
+function orderedVersions(num) {
+  const vs = tcgVersions(num), def = defaultVersion(vs);
+  return vs.sort((a, b) => (b === def) - (a === def) || (a.price ?? Infinity) - (b.price ?? Infinity));
+}
+
+// shop.picks is null until alt arts are chosen; then { num: [{ pid, qty }] } for every card found on TCGplayer.
+let shop = null;
+
+async function openShoppingList(includeTable) {
+  const all = shoppingNeeds(includeTable);
+  shop = {
+    includeTable,
+    needs: all.filter(x => !x.id.startsWith('P-')),   // promo cards are left out of Mass Entry
+    promos: all.filter(x => x.id.startsWith('P-')),
+    picks: null
+  };
   document.getElementById('shop-title').textContent = 'Shopping list: ' + (includeTable ? 'Deck + Table' : 'Deck');
+  document.getElementById('shop-modal').classList.add('open');
+  renderShop(true);
+  await loadTcgData();
+  renderShop(false);
+}
+
+function renderShop(loading) {
+  const { needs, picks, promos } = shop;
+  const total = needs.reduce((s, x) => s + x.need, 0);
   document.getElementById('shop-summary').textContent = needs.length
-    ? `${needs.reduce((s, x) => s + x.need, 0)} cards to buy across ${needs.length} card numbers.`
-    : 'You already own everything on this list.';
-  const lines = needs.map(x => massEntryLine(x.need, x.id, x.card ? x.card.name : ''));
+    ? `${total} cards to buy across ${needs.length} card numbers.` + (promos.length ? ` Promo cards left out: ${promos.map(p => p.id).join(', ')}.` : '')
+    : (promos.length ? `Only promo cards are missing (${promos.map(p => p.id).join(', ')}); those are left out of Mass Entry.` : 'You already own everything on this list.');
+
+  // Text block: name format until alt arts are chosen, then {qty}-{productId}
+  const lines = [];
+  needs.forEach(x => {
+    if (picks && picks[x.id]) picks[x.id].forEach(p => lines.push(`${p.qty}-${p.pid}`));
+    else lines.push(massEntryLine(x.need, x.id, x.card ? x.card.name : ''));
+  });
   document.getElementById('shop-text').value = lines.join('\n');
-  // Prefilled Mass Entry link: lines joined with "||" in the `c` parameter.
   document.getElementById('shop-send').href = 'https://www.tcgplayer.com/massentry?productline=' +
     encodeURIComponent('One Piece Card Game') + '&c=' + encodeURIComponent(lines.join('||'));
-  document.getElementById('shop-modal').classList.add('open');
+  document.getElementById('shop-mode').textContent = picks
+    ? 'Alt arts chosen. The list uses TCGplayer product codes ({qty}-{product id}).'
+    : 'Showing the standard version of each card. Use "Select alt arts" to choose versions.';
+
+  const grid = document.getElementById('shop-grid');
+  const note = document.getElementById('shop-prices');
+  if (loading) { grid.innerHTML = '<div class="meta">Loading TCGplayer prices…</div>'; note.textContent = ''; return; }
+  if (!tcgData) {
+    grid.innerHTML = '<div class="meta">TCGplayer price data is unavailable right now.</div>';
+    note.textContent = '';
+    document.getElementById('shop-total').textContent = '';
+    return;
+  }
+
+  // Grid: one tile per version to order
+  let sum = 0, unpriced = 0;
+  const tiles = [];
+  needs.forEach(x => {
+    const vs = tcgVersions(x.id);
+    if (!vs.length) {
+      tiles.push(`<div class="shop-tile"><span class="qty">×${x.need}</span>
+        <img src="https://optcg-api.arjunbansal-ai.workers.dev/images/${esc(x.id)}" alt="">
+        <div class="nm">${esc(x.card ? x.card.name : x.id)}</div><div class="meta">${esc(x.id)}</div>
+        <div class="meta">Not found on TCGplayer</div></div>`);
+      unpriced += x.need;
+      return;
+    }
+    const chosen = picks && picks[x.id] ? picks[x.id] : [{ pid: defaultVersion(vs).pid, qty: x.need }];
+    chosen.forEach(p => {
+      const v = vs.find(v => v.pid === p.pid);
+      if (v.price == null) unpriced += p.qty; else sum += v.price * p.qty;
+      tiles.push(`<div class="shop-tile"><span class="qty">×${p.qty}</span>
+        <img src="${tcgImg(v.pid)}" alt="${esc(v.name)}" loading="lazy" onclick="openModal('${tcgImg(v.pid, true)}')">
+        <div class="nm">${esc(v.name)}</div><div class="meta">${esc(x.id)} · ${esc(v.abbr)}</div>
+        <div>${money(v.price)} each${v.price != null && p.qty > 1 ? ` · ${money(v.price * p.qty)}` : ''}</div></div>`);
+    });
+  });
+  grid.innerHTML = tiles.join('') || '';
+  document.getElementById('shop-total').textContent = needs.length
+    ? `Total market price: ${money(sum)}` + (unpriced ? ` (+${unpriced} card${unpriced > 1 ? 's' : ''} with no market price)` : '')
+    : '';
+  note.innerHTML = `Market prices from TCGplayer via <a href="https://tcgcsv.com" target="_blank" rel="noopener">tcgcsv.com</a>, as of ${esc((tcgData.updated || '').slice(0, 10))}.`;
 }
-// "OP18-034" -> "4 Franky [OP18] 034"; promos "P-038" -> "[P] 038"
+
+// "OP18-034" -> "4 Franky [OP18] 034"
 function massEntryLine(qty, id, name) {
   const m = baseId(id).match(/^([A-Z]+\d*)-(\d+)$/);
   return m ? `${qty} ${name} [${m[1]}] ${m[2]}` : `${qty} ${name}`;
 }
 function closeShop() { document.getElementById('shop-modal').classList.remove('open'); }
 function copyShop() { navigator.clipboard.writeText(document.getElementById('shop-text').value).then(() => alert('Copied')); }
+
+// ---------- Alt art picker: one card at a time, choose how many of each version.
+// Nothing changes unless the user reaches "Done"; closing discards the draft.
+let pick = null;   // { queue: [need], i, draft: { num: { pid: qty } } }
+
+function openAltPicker() {
+  if (!shop) return;
+  if (!tcgData) { alert("TCGplayer data isn't available right now, so alt arts can't be shown."); return; }
+  if (!shop.needs.length) { alert('There is nothing on this shopping list.'); return; }
+  const queue = shop.needs.filter(x => tcgVersions(x.id).length > 1);
+  if (!queue.length) {
+    alert('None of the cards on this list have alternate art versions on TCGplayer, so the list already orders the only version of each card.');
+    return;
+  }
+  const draft = {};
+  queue.forEach(x => {
+    draft[x.id] = {};
+    (shop.picks?.[x.id] || []).forEach(p => { draft[x.id][p.pid] = p.qty; });
+  });
+  pick = { queue, i: 0, draft };
+  renderPicker();
+  document.getElementById('pick-modal').classList.add('open');
+}
+
+function pickSum(num) { return Object.values(pick.draft[num]).reduce((s, n) => s + n, 0); }
+
+function renderPicker() {
+  const x = pick.queue[pick.i];
+  const vs = orderedVersions(x.id);
+  const def = defaultVersion(vs);
+  const sel = pickSum(x.id);
+  const rem = x.need - sel;
+  document.getElementById('pick-step').textContent = `Card ${pick.i + 1} of ${pick.queue.length}`;
+  document.getElementById('pick-title').textContent = `${x.id} ${x.card ? x.card.name : ''}`;
+  document.getElementById('pick-status').innerHTML =
+    `Selected <strong>${sel} / ${x.need}</strong>` +
+    (rem > 0 ? ` · the other ${rem} will be the standard version` : ' · all copies chosen');
+  document.getElementById('pick-grid').innerHTML = vs.map(v => {
+    const n = pick.draft[x.id][v.pid] || 0;
+    return `<div class="shop-tile${n ? ' chosen' : ''}">
+      <img src="${tcgImg(v.pid, true)}" onerror="this.onerror=null;this.src='${tcgImg(v.pid)}'" alt="${esc(v.name)}" onclick="openModal(this.src)">
+      <div class="nm">${esc(v.name)}${v === def ? ' <span class="meta">(standard)</span>' : ''}</div>
+      <div class="meta">${esc(v.abbr)} · #${v.pid}</div>
+      <div>${money(v.price)}</div>
+      <div class="counter">
+        <button onclick="pickAdj(${v.pid}, -1)" ${n <= 0 ? 'disabled' : ''}>−</button>
+        <span>${n}</span>
+        <button onclick="pickAdj(${v.pid}, 1)" ${sel >= x.need ? 'disabled' : ''}>+</button>
+      </div></div>`;
+  }).join('');
+  document.getElementById('pick-back').style.visibility = pick.i > 0 ? 'visible' : 'hidden';
+  document.getElementById('pick-next').textContent = pick.i < pick.queue.length - 1 ? 'Next →' : 'Done';
+}
+
+function pickAdj(pid, delta) {
+  const x = pick.queue[pick.i];
+  const d = pick.draft[x.id];
+  const n = (d[pid] || 0) + delta;
+  if (n < 0 || (delta > 0 && pickSum(x.id) >= x.need)) return;
+  d[pid] = n;
+  renderPicker();
+}
+function pickBack() { if (pick.i > 0) { pick.i--; renderPicker(); } }
+function pickNext() {
+  if (pick.i < pick.queue.length - 1) { pick.i++; renderPicker(); return; }
+  // Done: build the final list. Unchosen copies go to the standard version.
+  const picks = {};
+  shop.needs.forEach(x => {
+    const vs = tcgVersions(x.id);
+    if (!vs.length) return;
+    const d = pick.draft[x.id] || {};
+    const list = Object.entries(d).map(([pid, qty]) => ({ pid: Number(pid), qty })).filter(p => p.qty > 0);
+    const rem = x.need - list.reduce((s, p) => s + p.qty, 0);
+    if (rem > 0) {
+      const def = defaultVersion(vs);
+      const e = list.find(p => p.pid === def.pid);
+      if (e) e.qty += rem; else list.unshift({ pid: def.pid, qty: rem });
+    }
+    picks[x.id] = list;
+  });
+  shop.picks = picks;
+  closePicker();
+  renderShop(false);
+}
+function closePicker() { pick = null; document.getElementById('pick-modal').classList.remove('open'); }
+
 
 function copyDeck() {
   // leader first, as OPTCGSim expects

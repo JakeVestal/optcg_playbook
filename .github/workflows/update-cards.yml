@@ -28,22 +28,27 @@ jobs:
         # did succeed; the job is marked failed at the end so it gets noticed.
         continue-on-error: true
         run: python3 scripts/update_cards.py
+      - name: Update TCGplayer prices
+        id: prices
+        continue-on-error: true
+        run: python3 scripts/update_prices.py
       - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/cards.csv data/card-changes-log.txt data/rules/ rules.html 2>/dev/null || git add data/cards.csv data/rules/ rules.html
+          git add data/cards.csv data/card-changes-log.txt data/tcgplayer.json data/rules/ rules.html
           if git diff --staged --quiet; then
             echo "No changes"
           else
-            git commit -m "chore: update cards.csv and rules from official sources"
+            git commit -m "chore: nightly update of cards, rules and TCGplayer prices"
             for i in 1 2 3; do
               git pull --rebase && git push && break
               sleep 5
             done
           fi
-      - name: Fail if update script failed
-        if: steps.update.outcome == 'failure'
+      - name: Fail if an update step failed
+        if: steps.update.outcome == 'failure' || steps.prices.outcome == 'failure'
         run: |
-          echo "update_cards.py exited non-zero; see the 'Run update script' log"
+          echo "cards/rules step: ${{ steps.update.outcome }}"
+          echo "prices step: ${{ steps.prices.outcome }}"
           exit 1

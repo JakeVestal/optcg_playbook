@@ -28,6 +28,8 @@ Every page is a single hand-written HTML file with inline CSS and JS.
 | `index.html` | Utility Cards tool (the main page). Loads `data/cards.csv` at runtime. |
 | `playbooks/{bonney,zoro,brook,franky,karoo}.html` | The five Leader playbooks, one page each. |
 | `rules.html` | **Generated** by `scripts/update_cards.py`. Do not hand-edit it; edit the generator. |
+| `data/tcgplayer.json` | TCGplayer products and market prices per card number, built nightly by `scripts/update_prices.py` from tcgcsv.com. |
+| `scripts/update_prices.py` | Nightly price sync: tcgcsv.com category 68 (One Piece), all groups, products + prices. |
 | `worker/optcg-state.js` | Source of the Cloudflare Worker behind Save/Load State. It is deployed by hand in the Cloudflare dashboard; the repo copy is the reference. |
 | `data/cards.csv` | **Source of truth for all card data.** |
 | `data/rules/comprehensive_rules.{pdf,txt}` | **Source of truth for the official rules.** |
@@ -108,10 +110,22 @@ Every page is a single hand-written HTML file with inline CSS and JS.
   - no more than 4 copies per card number, counting alt arts together;
   - every card shares at least one color with the Leader.
 - **Table panel:** cards you're considering. Each entry has buttons for +Deck and remove.
-- **Collection panel:** owned quantities, with +/− buttons. The shopping list subtracts these
-  owned quantities from either the Deck or the Deck + Table (a Table card counts as 4 wanted, or
-  1 for a Leader). The result is shown as TCGplayer Mass Entry text (`qty name`) with a link to
-  Mass Entry, plus a reference list with card numbers.
+- **Collection panel:** owned quantities, with +/− buttons.
+- **Shopping list** (two buttons: "Deck", or "Deck + Table"):
+  - **What it lists:** the wanted cards minus the owned ones, counted per card number. A Table
+    card counts as 4 wanted, or 1 for a Leader. `P-` promo cards are left out of Mass Entry.
+  - **The text block:** it starts in name format (`4 Franky [OP18] 034`). After alt arts are
+    chosen it switches to TCGplayer product codes (`{qty}-{productId}`, e.g. `1-712892`).
+  - **"Select alt arts":** a step-by-step picker, one card at a time, covering only cards that
+    have more than one TCGplayer product. Each version shows its image, set and market price, with
+    a −/+ counter capped at the needed total. Copies left unchosen go to the standard version, which
+    is a version whose name doesn't flag it as special art, cheapest first. Closing the picker
+    discards the choices; only "Done" changes the list. If no card on the list has alt arts, the
+    page says so.
+  - **Grid:** a tile per version to order, showing image, quantity and unit price, plus the total
+    market price for the order.
+  - **Buttons:** "Send to TCGplayer" (Mass Entry prefilled through the `c=` parameter with `||`
+    between lines; TCGplayer doesn't document this), Copy, and Open Mass Entry.
 - **Alt-art viewer:** shows the `_p`/`_r` images for the cards in the deck.
 - **Save/Load State:** password-protected, through the Worker
   `optcg-state.46jwnf9v56.workers.dev`. Every call is a POST with
@@ -150,7 +164,11 @@ Every page is a single hand-written HTML file with inline CSS and JS.
    the CSV atomically.
 4. Any failure exits non-zero. The workflow still commits whatever succeeded, then marks the
    job as failed so that the problem gets noticed.
-5. Rule changes are logged in `rule-changes-log.txt`. Card changes are logged in
+5. Prices: `update_prices.py` exits early if tcgcsv's `last-updated.txt` hasn't changed. It
+   refuses to write if more than 10% of groups fail or the product count drops by more than 10%.
+   tcgcsv blocks browser (CORS) requests and asks not to be called from user-facing apps, so the
+   page only ever reads `data/tcgplayer.json`. Keep the pause between requests (about 180 per run).
+6. Rule changes are logged in `rule-changes-log.txt`. Card changes are logged in
    `card-changes-log.txt`.
 
 ## 8. Working conventions
